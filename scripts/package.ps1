@@ -6,7 +6,7 @@ New-Item -ItemType Directory -Force -Path $outputDir | Out-Null
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 Add-Type -AssemblyName System.IO.Compression
 $taskMeta = Get-Content -LiteralPath (Join-Path $addonPath 'addon.meta') -Raw -Encoding UTF8 | ConvertFrom-Json
-$outputPath = Join-Path $outputDir ("TanukiBCL-Roles-" + $taskMeta.Version + ".zip")
+$outputPath = Join-Path $outputDir ("TanukiBCL-NoSAddon-" + $taskMeta.Version.Replace('β', 'beta') + ".zip")
 $taskStream = [System.IO.File]::Open($outputPath, [System.IO.FileMode]::Create)
 $taskArchive = [System.IO.Compression.ZipArchive]::new($taskStream, [System.IO.Compression.ZipArchiveMode]::Create)
 try {

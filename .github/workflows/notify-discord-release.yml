@@ -1,0 +1,59 @@
+name: Notify Discord on release
+
+on:
+  release:
+    types: [published]
+
+permissions: {}
+
+jobs:
+  notify-discord:
+    name: Post Tanuki Don release to Discord
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Send release notification
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          import sys
+          import urllib.error
+          import urllib.parse
+          import urllib.request
+
+          webhook = os.environ.get("DISCORD_WEBHOOK_URL", "")
+          if not webhook:
+              sys.exit("Set the DISCORD_WEBHOOK_URL repository secret.")
+          with open(os.environ["GITHUB_EVENT_PATH"], encoding="utf-8") as source:
+              release = json.load(source)["release"]
+          assets = release.get("assets", [])
+          downloads = "\n".join(f'[{a["name"]}]({a["browser_download_url"]})' for a in assets if a["name"].endswith(".zip"))
+          payload = {
+              "content": "📢 タヌキ丼（タヌキのアドオン）のベータ版を公開しました！" if release.get("prerelease") else "📢 タヌキ丼（タヌキのアドオン）を公開しました！",
+              "embeds": [{
+                  "title": (release.get("name") or release["tag_name"])[:256],
+                  "url": release["html_url"],
+                  "description": (release.get("body") or "変更内容はリリースページをご覧ください。")[:3000],
+                  "fields": [{"name": "ダウンロード", "value": downloads[:1024] or release["html_url"]}],
+                  "color": 10181046,
+              }],
+              "allowed_mentions": {"parse": []},
+          }
+          parsed = urllib.parse.urlsplit(webhook)
+          query = dict(urllib.parse.parse_qsl(parsed.query))
+          query["wait"] = "true"
+          url = urllib.parse.urlunsplit(parsed._replace(query=urllib.parse.urlencode(query)))
+          request = urllib.request.Request(url, data=json.dumps(payload, ensure_ascii=False).encode("utf-8"), headers={"Content-Type": "application/json", "User-Agent": "TanukiDon-Release-Notifier/1.0"}, method="POST")
+          try:
+              with urllib.request.urlopen(request, timeout=20) as response:
+                  if response.status != 200:
+                      sys.exit(f"Discord returned HTTP {response.status}.")
+          except urllib.error.HTTPError as error:
+              sys.exit(f"Discord returned HTTP {error.code}.")
+          except urllib.error.URLError:
+              sys.exit("Could not reach the Discord webhook.")
+          print("Discord release notification sent.")
+          PY
