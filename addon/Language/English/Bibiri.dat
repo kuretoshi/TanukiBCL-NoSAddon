@@ -1,0 +1,13 @@
+"role.tanukiBclBibiri.name" : "Scaredy Cat"
+"role.tanukiBclBibiri.short" : "SC"
+"role.tanukiBclBibiri.blurb" : "Keep your voice down"
+"role.tanukiBclBibiri.doc" : "A modifier that dies as soon as microphone loudness reaches the threshold. The host can enable loudness deaths during meetings. Requires a compatible Tanuki BCL client. Voice levels use a 0-100 scale: lower values respond to quieter voices; higher values require louder voices."
+"options.role.tanukiBclBibiri.detail" : "A modifier that dies from speaking too loudly."
+"options.role.tanukiBclBibiri.threshold" : "Voice level that triggers death"
+"options.role.tanukiBclBibiri.duration" : "Time above threshold (seconds)"
+
+"role.tanukiBclBibiri.meter" : "100% = death"
+"role.tanukiBclBibiri.danger" : "Too loud!"
+"role.tanukiBclBibiri.disconnected" : "Offline"
+"role.tanukiBclBibiri.paused" : "Paused"
+"options.role.tanukiBclBibiri.duringMeeting" : "Loudness deaths during meetings"

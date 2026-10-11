@@ -1,0 +1,13 @@
+"role.tanukiBclBibiri.name" : "ビビリ"
+"role.tanukiBclBibiri.short" : "怯"
+"role.tanukiBclBibiri.blurb" : "大声を出さずに任務をこなそう"
+"role.tanukiBclBibiri.doc" : "通常の役職に追加されるモディファイア。タヌキのベタクルから通知されたマイク音量が設定した大きさの声に達した瞬間に自滅します。会議中にも判定するかは部屋主が設定できます。対応版ベタクルが必要です。声量レベルは0〜100の目安です。数字が小さいほど小声でも自滅しやすく、大きいほど大声が必要です。"
+"options.role.tanukiBclBibiri.detail" : "声量が設定値に達すると即死するモディファイア。"
+"options.role.tanukiBclBibiri.threshold" : "自滅する声量レベル"
+"options.role.tanukiBclBibiri.duration" : "大声を出し続けると自滅する時間 (秒)"
+
+"role.tanukiBclBibiri.meter" : "100%で即死"
+"role.tanukiBclBibiri.danger" : "危険！"
+"role.tanukiBclBibiri.disconnected" : "未接続"
+"role.tanukiBclBibiri.paused" : "判定停止"
+"options.role.tanukiBclBibiri.duringMeeting" : "会議中も大声で自滅する"

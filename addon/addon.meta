@@ -1,0 +1,9 @@
+{
+  "Id": "tanuki.bcl.roles",
+  "Name": "タヌキ丼（タヌキのアドオン）",
+  "Author": "kuretoshi",
+  "Description": "タヌキのベタクルと連動する役職を追加するアドオンです。ガイドラインに従い実装しています。<br>対応：タヌキのベタクル v3.2.23（本アドオンの連携機能を含む版）",
+  "Version": "0.8.0",
+  "Build": 39,
+  "Dependency": []
+}

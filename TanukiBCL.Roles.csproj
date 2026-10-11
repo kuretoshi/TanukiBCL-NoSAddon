@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="addon/Scripts/*.cs" />
+    <Reference Include="$(AmongUs)/BepInEx/core/Il2CppInterop.Runtime.dll" />
+    <Reference Include="$(AmongUs)/BepInEx/core/Il2CppInterop.Common.dll" />
+    <Reference Include="$(AmongUs)/BepInEx/core/BepInEx.Core.dll" />
+    <Reference Include="$(AmongUs)/BepInEx/core/BepInEx.Unity.IL2CPP.dll" />
+    <Reference Include="$(AmongUs)/BepInEx/core/0Harmony.dll" />
+    <Reference Include="$(AmongUs)/BepInEx/interop/*.dll" />
+    <Reference Include="Nebula"><HintPath>$(NoSPluginDir)/Nebula.dll</HintPath></Reference>
+    <Reference Include="NebulaAPI"><HintPath>$(AmongUs)/NebulaLibs/NebulaAPI.dll</HintPath></Reference>
+  </ItemGroup>
+  <Target Name="CheckGameReferences" BeforeTargets="ResolveReferences">
+    <Error Condition="!Exists('$(NoSPluginDir)/Nebula.dll')" Text="Set NoSPluginDir to the installed NoS plugin folder containing Nebula.dll and NebulaAPI.dll." />
+    <Error Condition="!Exists('$(AmongUs)/BepInEx/interop/Assembly-CSharp.dll')" Text="Set AmongUs to a NoS game folder with generated BepInEx interop assemblies." />
+  </Target>
+</Project>
