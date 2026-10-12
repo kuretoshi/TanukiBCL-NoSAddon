@@ -6,7 +6,7 @@ Nebula on the Ship（NoS）に、タヌキのベタクルと連携する役職�
 
 タイトル画面の右下にタヌキアイコンの問い合わせボタンを追加しました。カーソルを合わせると説明が表示され、クリックすると [問い合わせ用Discord](https://discord.gg/j7grHxTh4H) を開きます。
 
-今後の配布ZIP名はバージョンを含まない `TanukiBCL-NoSAddon.zip` に固定します。バージョンはZIP内の `addon.meta` とGitHubのリリース名・タグで管理します。NoSの `Addons` フォルダーへ配置する際は、旧版の `TanukiBCL-Roles-*.zip` や `TanukiBCL-NoSAddon-*.zip` と重複させず、差し替え前にNoSを終了してください。既に公開したリリースのファイル名はダウンロードリンクを維持するため変更しません。
+今後の配布ZIP名はバージョンを含まない `TanukiBCL-NoSAddon.zip` に固定します。バージョンはZIP内の `addon.meta` とGitHubのリリース名・タグで管理します。NoSの `Addons` フォルダーへ配置する際は、旧版の `TanukiBCL-Roles-*.zip` や `TanukiBCL-NoSAddon-*.zip` と重複させず、差し替え前にNoSを終了してください。β3は固定名で再公開しました。β1・β2のファイル名はそのまま維持します。
 
 GitHubでリリースを公開すると、リポジトリSecret `DISCORD_WEBHOOK_URL` の通知先へバージョン・変更内容・ダウンロードリンクを送ります。Webhook URLはソースに含めません。
 
