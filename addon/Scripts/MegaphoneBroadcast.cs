@@ -10,15 +10,15 @@ namespace TanukiBCL.Roles;
 // BCL never needs to trust another voice peer's claim about their role.
 public static class MegaphoneBroadcast
 {
-    private static readonly Dictionary<byte, (float energy, float range, bool voiceEffect)> players = new();
-    private static readonly string path = Path.Combine(Environment.GetEnvironmentVariable("LOCALAPPDATA") ?? Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "TanukiBCL", "NoS", "megaphone-state.json");
+    private static readonly Dictionary<byte, (float energy, float range, bool voiceEffect, int shotId, bool firing)> players = new();
+    private static readonly string path = Path.Combine(Environment.GetEnvironmentVariable("LOCALAPPDATA") ?? Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "TanukiBCL", "NoS", "megaphone-state-" + Environment.ProcessId + ".json");
     private static long lastWrite;
 
-    public static void Set(byte id, float energy, float maxRange, bool voiceEffect)
+    public static void Set(byte id, float energy, float maxRange, bool voiceEffect, int shotId, bool firing = false, bool immediate = false)
     {
         energy = Math.Clamp(energy, 0f, 1f);
-        players[id] = (energy, 2f + energy * (Math.Max(2f, maxRange) - 2f), voiceEffect);
-        Publish(false);
+        players[id] = (energy, 2f + energy * (Math.Max(2f, maxRange) - 2f), voiceEffect, shotId, firing);
+        Publish(immediate);
     }
 
     public static void Remove(byte id)
@@ -41,7 +41,9 @@ public static class MegaphoneBroadcast
             json.Append("{\"playerId\":").Append(entry.Key).Append(",\"energy\":")
                 .Append(entry.Value.energy.ToString("R", CultureInfo.InvariantCulture)).Append(",\"range\":")
                 .Append(entry.Value.range.ToString("R", CultureInfo.InvariantCulture))
-                .Append(",\"voiceEffect\":").Append(entry.Value.voiceEffect ? "true" : "false").Append('}');
+                .Append(",\"voiceEffect\":").Append(entry.Value.voiceEffect ? "true" : "false")
+                .Append(",\"shotId\":").Append(entry.Value.shotId)
+                .Append(",\"phase\":\"").Append(entry.Value.firing ? "firing" : "charging").Append("\"}");
         }
         json.Append("]}");
         try

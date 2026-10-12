@@ -42,7 +42,7 @@ public sealed class MegaphoneBazooka : DefinedSingleAbilityRoleTemplate<Megaphon
     public static readonly MegaphoneBazooka MyRole = new();
 
     private MegaphoneBazooka() : base("tanukiMegaphone", Virial.Color.ImpostorColor, RoleCategory.ImpostorRole, Impostor.MyTeam,
-        new IConfiguration[] { AimMode, Cooldown, ChargeTime, MinWidth, MaxWidth, Capacity, QuietDb, LoudDb, FriendlyFire, NormalKill, VoiceRange, VoiceEffect, SoundEnabled, SoundVolume })
+        new IConfiguration[] { AimMode, Cooldown, ChargeTime, MinWidth, MaxWidth, Capacity, QuietDb, LoudDb, FriendlyFire, NormalKill, VoiceEffect, SoundEnabled, SoundVolume })
     {
         ConfigurationHolder!.Illustration = MegaphoneVisual.Icon;
         ConfigurationHolder.AppendConfiguration(MicrophoneTest.Option(() => QuietDb, () => LoudDb));
@@ -114,6 +114,7 @@ public sealed class MegaphoneBazooka : DefinedSingleAbilityRoleTemplate<Megaphon
                 Clear();
                 shotId = id;
                 phase = Phase.Charging;
+                MegaphoneBroadcast.Set(MyPlayer.PlayerId, 0, VoiceRange, VoiceEffect, id, false, true);
                 charge.Reset();
                 elapsed = 0;
                 visual = new MegaphoneVisual();
@@ -147,7 +148,7 @@ public sealed class MegaphoneBazooka : DefinedSingleAbilityRoleTemplate<Megaphon
             originX = x;
             originY = y;
             if (command == 1) audio?.Fire(voiceEnergy);
-            if (phase == Phase.Firing) MegaphoneBroadcast.Remove(MyPlayer.PlayerId);
+            if (command == 1) MegaphoneBroadcast.Set(MyPlayer.PlayerId, voiceEnergy, VoiceRange, VoiceEffect, shotId, true, true);
         }
 
         private void Update(GameUpdateEvent ev)
@@ -194,11 +195,12 @@ public sealed class MegaphoneBazooka : DefinedSingleAbilityRoleTemplate<Megaphon
                 else if (elapsed > (float)ChargeTime + 2f) { Finish(); return; }
                 if (phase == Phase.Charging)
                 {
-                    MegaphoneBroadcast.Set(MyPlayer.PlayerId, voiceEnergy, VoiceRange, VoiceEffect);
+                    MegaphoneBroadcast.Set(MyPlayer.PlayerId, voiceEnergy, VoiceRange, VoiceEffect, shotId);
                 }
             }
             if (phase == Phase.Firing)
             {
+                MegaphoneBroadcast.Set(MyPlayer.PlayerId, voiceEnergy, VoiceRange, VoiceEffect, shotId, true);
                 if (elapsed >= 5f) { Finish(); return; } // Nova's beam duration default.
                 if (AmOwner)
                 {

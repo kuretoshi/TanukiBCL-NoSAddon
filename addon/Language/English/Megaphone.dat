@@ -24,4 +24,4 @@
 "options.role.tanukiMegaphone.soundEnabled" : "Enable sound effects"
 "options.role.tanukiMegaphone.soundVolume" : "Sound effect volume"
 
-"options.role.tanukiMegaphone.voiceEffect" : "Apply voice effect while charging"
+"options.role.tanukiMegaphone.voiceEffect" : "Add echo to recorded voice on firing"

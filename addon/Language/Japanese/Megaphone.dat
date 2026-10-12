@@ -24,4 +24,4 @@
 "options.role.tanukiMegaphone.soundEnabled" : "効果音を有効にする"
 "options.role.tanukiMegaphone.soundVolume" : "効果音の音量"
 
-"options.role.tanukiMegaphone.voiceEffect" : "使用中の声にエフェクトをかける"
+"options.role.tanukiMegaphone.voiceEffect" : "発射時の録音音声に残響をつける"
