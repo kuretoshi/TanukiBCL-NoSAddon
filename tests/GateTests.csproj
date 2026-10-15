@@ -3,6 +3,8 @@
   <ItemGroup><Compile Include="../addon/Scripts/LoudnessGate.cs" Link="LoudnessGate.cs" /><Compile Include="../addon/Scripts/VoiceBridge.cs" Link="VoiceBridge.cs" /></ItemGroup>
   <ItemGroup><Compile Include="../addon/Scripts/MegaphoneCharge.cs" Link="MegaphoneCharge.cs" /></ItemGroup>
   <ItemGroup><Compile Include="../addon/Scripts/SilenceCountdown.cs" Link="SilenceCountdown.cs" /></ItemGroup>
+  <ItemGroup><Compile Include="../addon/Scripts/SpeechBudget.cs" Link="SpeechBudget.cs" /></ItemGroup>
+  <ItemGroup><Compile Include="../addon/Scripts/InquiryReport.cs" Link="InquiryReport.cs" /></ItemGroup>
   <ItemGroup><Compile Include="../addon/Scripts/MegaphoneSynth.cs" Link="MegaphoneSynth.cs" /></ItemGroup>
   <ItemGroup><Compile Include="../addon/Scripts/SharedVoiceBridge.cs" Link="SharedVoiceBridge.cs" /></ItemGroup>
   <ItemGroup><Compile Include="../addon/Scripts/MegaphoneBattery.cs" Link="MegaphoneBattery.cs" /></ItemGroup>

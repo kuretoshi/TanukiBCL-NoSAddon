@@ -101,6 +101,7 @@ public sealed class Bibiri : DefinedAllocatableModifierTemplate, DefinedAllocata
         {
             if (MyPlayer.IsDead || MyPlayer.IsDisconnected) { DestroyIndicator(); return; }
             bool meeting = MeetingHud.Instance != null;
+            if (meeting && !DuringMeeting) { DestroyIndicator(); return; }
             if (text == null || indicatorInMeeting != meeting)
             {
                 DestroyIndicator();
@@ -110,6 +111,7 @@ public sealed class Bibiri : DefinedAllocatableModifierTemplate, DefinedAllocata
                 indicator = new GameObject("TanukiBibiriVolume");
                 indicator.transform.SetParent(parent, false);
                 indicator.SetAsUIAspectContent(AspectPosition.EdgeAlignments.RightTop, new Vector3(.65f, 1.8f, -30f));
+                indicator.GetComponent<AspectPosition>().updateAlways = true;
                 indicator.transform.localScale = Vector3.one * .55f;
                 icon = indicator.AddComponent<SpriteRenderer>();
                 icon.sprite = VoiceRoleIcons.BibiriSprite;
@@ -140,6 +142,8 @@ public sealed class Bibiri : DefinedAllocatableModifierTemplate, DefinedAllocata
                 indicatorInMeeting = meeting;
             }
             bool connected = bridge?.Connected ?? false;
+            indicator!.GetComponent<AspectPosition>().AdjustPosition();
+            text!.gameObject.SetActive(true);
             double percent = connected && bridge!.LatestActive ? bridge.LatestRms / Math.Pow(10, (float)Threshold / 20) * 100 : 0;
             var color = !eligible || !connected ? UnityEngine.Color.gray : percent >= 100 ? UnityEngine.Color.red
                 : percent >= 70 ? new UnityEngine.Color(1f, .75f, .2f) : new UnityEngine.Color(.55f, 1f, .7f);

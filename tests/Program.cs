@@ -6,6 +6,45 @@ static void Check(bool ok, string name) { if (!ok) throw new Exception(name); }
 static bool Sample(LoudnessGate gate, long seq, double time, double rms = .5, bool active = true)
     => gate.Sample(seq, rms, active, time, -12, .5);
 
+var speechBudget = new SpeechBudget();
+string sanitizedReport = InquiryReport.Redact(@"C:\Users\alice\game Bearer abc123 token=secret123 github_pat_example https://discord.com/api/webhooks/123/sensitive");
+Check(!sanitizedReport.Contains("alice") && !sanitizedReport.Contains("abc123") && !sanitizedReport.Contains("secret123") && !sanitizedReport.Contains("github_pat_example") && !sanitizedReport.Contains("sensitive"), "Inquiry log sanitizer removes common credentials and profile paths");
+Check(InquiryReport.Redact("Ordinary NoS error: failed to load role") == "Ordinary NoS error: failed to load role", "Inquiry log sanitizer preserves diagnostic text");
+var reportFolder = Path.Combine(Path.GetTempPath(), "TanukiInquiry-" + Guid.NewGuid().ToString("N"));
+Directory.CreateDirectory(reportFolder);
+File.WriteAllText(Path.Combine(reportFolder, "NebulaLog.txt"), new string('x', 300000) + "\nLAST ERROR token=private123");
+var reportLogs = InquiryReport.Collect(reportFolder);
+Check(reportLogs.Length == 2 && reportLogs[0].text.Contains("LAST ERROR") && !reportLogs[0].text.Contains("private123") && reportLogs[0].text.Length <= 262200, "Inquiry attaches only bounded sanitized log tails");
+Check(reportLogs[1].text == "[Log unavailable]", "Inquiry handles missing logs without aborting submission");
+File.Delete(Path.Combine(reportFolder, "NebulaLog.txt"));
+Directory.Delete(reportFolder);
+speechBudget.Sample(.5, true, 0, -35, 60);
+for (int i = 1; i <= 10; i++) speechBudget.Sample(.5, true, i * .1, -35, 60);
+Check(Math.Abs(speechBudget.UsedSeconds - 1) < 1e-9, "LimitSpeech counts spoken intervals");
+for (int i = 11; i <= 20; i++) speechBudget.Sample(0, true, i * .1, -35, 60);
+Check(Math.Abs(speechBudget.UsedSeconds - 1) < 1e-9, "LimitSpeech pauses while silent");
+speechBudget.Sample(.5, false, 2.1, -35, 60);
+speechBudget.Sample(.5, false, 2.2, -35, 60);
+Check(Math.Abs(speechBudget.UsedSeconds - 1) < 1e-9, "LimitSpeech pauses while muted");
+speechBudget.Pause(); speechBudget.Sample(.5, true, 50, -35, 60);
+Check(Math.Abs(speechBudget.UsedSeconds - 1) < 1e-9, "LimitSpeech reconnect does not spend missing time");
+speechBudget.Sample(.5, true, 50.1, -35, 60);
+speechBudget.Sample(.5, true, 55, -35, 60);
+Check(Math.Abs(speechBudget.UsedSeconds - 1.1) < 1e-9, "LimitSpeech ignores stalled sample intervals");
+var shortBudget = new SpeechBudget();
+shortBudget.Sample(.5, true, 0, -35, .1);
+Check(shortBudget.Sample(.5, true, .1, -35, .1), "LimitSpeech expires at the budget boundary");
+Check(shortBudget.Remaining(.1) == 0, "LimitSpeech remaining time never goes negative");
+Check(shortBudget.Add(10) && Math.Abs(shortBudget.Remaining(.1) - 10) < 1e-9, "LimitSpeech reward restores ten seconds after exhaustion");
+shortBudget.Sample(.5, true, 20, -35, .1);
+Check(Math.Abs(shortBudget.Remaining(.1) - 10) < 1e-9, "LimitSpeech reward pauses the old sample interval");
+var rewardedBudget = new SpeechBudget();
+Check(rewardedBudget.Add(10) && rewardedBudget.Add(20) && rewardedBudget.Remaining(60) == 90, "LimitSpeech task and kill rewards accumulate above initial budget");
+Check(!rewardedBudget.Add(0) && !rewardedBudget.Add(-10) && !rewardedBudget.Add(double.NaN) && !rewardedBudget.Add(double.PositiveInfinity) && rewardedBudget.Remaining(60) == 90, "LimitSpeech disabled or invalid rewards do not change time");
+var overshotBudget = new SpeechBudget();
+overshotBudget.Sample(.5, true, 0, -35, .05);
+Check(overshotBudget.Sample(.5, true, .1, -35, .05) && overshotBudget.Add(10) && Math.Abs(overshotBudget.Remaining(.05) - 10) < 1e-9, "LimitSpeech sampling overshoot does not reduce the next reward");
+
 var instant = new LoudnessGate();
 Check(!instant.Sample(0, .1, true, 0, -12, 0), "instant Bibiri ignores quiet voice");
 Check(instant.Sample(1, Math.Pow(10, -12d / 20), true, .05, -12, 0), "instant Bibiri kills on first sample at threshold");
