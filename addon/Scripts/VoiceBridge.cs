@@ -112,7 +112,14 @@ public sealed class VoiceBridge : IDisposable
         {
             nextPublish = clock.Elapsed.TotalSeconds + 1;
             // Repair deletion/replacement while this local role is still active.
-            if (!File.Exists(descriptorPath) || File.ReadAllText(descriptorPath) != descriptor) Publish();
+            // Descriptor discovery is maintenance, not the lifetime of the UDP
+            // session. A temporary file lock must not replace the socket/token.
+            try
+            {
+                if (!File.Exists(descriptorPath) || File.ReadAllText(descriptorPath) != descriptor) Publish();
+            }
+            catch (IOException) { }
+            catch (UnauthorizedAccessException) { }
         }
         string? latest = null;
         // Bound work per frame. Discard a backlog instead of treating it as continuous speech.

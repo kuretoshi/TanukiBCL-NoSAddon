@@ -119,6 +119,15 @@ using (var bridge = new VoiceBridge(7, directory: testDirectory, discoveryPort: 
     Check(!bridge.Poll(false, -12, .25), "meeting suppresses death");
     Send(token, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
     Check(!bridge.Poll(true, -12, .25), "meeting clears accumulated volume");
+    // A scanner or another reader may temporarily lock discovery metadata.
+    // Existing authenticated UDP traffic must keep working through that lock.
+    Thread.Sleep(1050);
+    using (var descriptorLock = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.None))
+    {
+        Send(token, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
+        Check(bridge.TryReadSample(out _, out _, out _) && bridge.Connected,
+            "descriptor contention does not disconnect an established voice session");
+    }
 }
 Check(!File.Exists(path), "descriptor removed on release");
 Directory.Delete(testDirectory);
