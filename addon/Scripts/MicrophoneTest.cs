@@ -15,6 +15,8 @@ public static class MicrophoneTest
     private static double started, lastDraw;
     private static float peak;
     private static string? error;
+    public static bool IsRunning => bridge != null;
+    public static bool Connected => bridge?.Connected ?? false;
 
     public static IConfiguration Option(Func<float> threshold, Func<float>? fastThreshold = null)
         => NebulaAPI.Configurations.Configuration(() => null, () =>
@@ -28,6 +30,7 @@ public static class MicrophoneTest
     {
         Stop(); peak = 0; error = null;
         if (LobbyBehaviour.Instance == null || PlayerControl.LocalPlayer == null) return;
+        LobbyVoiceStatus.ReleaseBridge();
         try
         {
             bridge = new VoiceBridge(PlayerControl.LocalPlayer.PlayerId, "tanukiMicTest");

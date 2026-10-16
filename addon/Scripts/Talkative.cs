@@ -113,6 +113,7 @@ public sealed class Talkative : DefinedAllocatableModifierTemplate, DefinedAlloc
                 var parent = inMeeting ? MeetingHud.Instance?.transform : HudManager.Instance?.transform;
                 if (template == null || parent == null) return;
                 indicator = new GameObject("TanukiTalkativeIndicator");
+                indicator.layer = template.gameObject.layer;
                 indicator.transform.SetParent(parent, false);
                 indicator.SetAsUIAspectContent(AspectPosition.EdgeAlignments.RightTop, new Vector3(.65f, 1.8f, -30f));
                 indicator.GetComponent<AspectPosition>().updateAlways = true;
