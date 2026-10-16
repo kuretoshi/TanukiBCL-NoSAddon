@@ -109,6 +109,9 @@ public sealed class Bibiri : DefinedAllocatableModifierTemplate, DefinedAllocata
                 var parent = meeting ? MeetingHud.Instance?.transform : HudManager.Instance?.transform;
                 if (template == null || parent == null) return;
                 indicator = new GameObject("TanukiBibiriVolume");
+                // Meeting HUD uses the UI camera. New GameObjects default to the
+                // world layer, so only the cloned text was visible in meetings.
+                indicator.layer = template.gameObject.layer;
                 indicator.transform.SetParent(parent, false);
                 indicator.SetAsUIAspectContent(AspectPosition.EdgeAlignments.RightTop, new Vector3(.65f, 1.8f, -30f));
                 indicator.GetComponent<AspectPosition>().updateAlways = true;
@@ -125,6 +128,7 @@ public sealed class Bibiri : DefinedAllocatableModifierTemplate, DefinedAllocata
                 SpriteRenderer Bar(string name, Vector3 position, Vector3 scale, UnityEngine.Color color, int order)
                 {
                     var obj = new GameObject(name); obj.transform.SetParent(indicator.transform, false);
+                    obj.layer = indicator.layer;
                     obj.transform.localPosition = position; obj.transform.localScale = scale;
                     var renderer = obj.AddComponent<SpriteRenderer>(); renderer.sprite = meterSprite;
                     renderer.color = color; renderer.sortingOrder = order; return renderer;
