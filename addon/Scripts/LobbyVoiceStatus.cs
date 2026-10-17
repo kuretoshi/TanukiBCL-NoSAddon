@@ -74,12 +74,17 @@ public static class LobbyVoiceStatus
             notice = UnityEngine.Object.Instantiate(template, hud.transform);
             notice.name = "TanukiLobbyVoiceStatus";
             notice.transform.localScale = Vector3.one;
-            notice.gameObject.SetAsUIAspectContent(AspectPosition.EdgeAlignments.Bottom,
-                new Vector3(0, .85f, -30));
+            notice.gameObject.SetAsUIAspectContent(AspectPosition.EdgeAlignments.Top,
+                new Vector3(0, .6f, -30));
             notice.GetComponent<AspectPosition>().updateAlways = true;
-            notice.fontSize = 1.6f;
+            // The cooldown template has auto sizing enabled; leaving it on
+            // enlarges this notice to fill the wide rectangle.
+            notice.enableAutoSizing = false;
+            notice.fontSize = 1.35f;
+            notice.enableWordWrapping = false;
+            notice.overflowMode = TMPro.TextOverflowModes.Ellipsis;
             notice.alignment = TMPro.TextAlignmentOptions.Center;
-            notice.rectTransform.sizeDelta = new Vector2(9f, .7f);
+            notice.rectTransform.sizeDelta = new Vector2(8f, .4f);
             notice.color = new UnityEngine.Color(1f, .65f, .2f);
             notice.text = NebulaAPI.Language.Translate("tanuki.lobbyVoice.disconnected");
         }
