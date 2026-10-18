@@ -1,1 +1,5 @@
 "tanuki.lobbyVoice.disconnected" : "ベタクル未接続：タヌキのベタクルを起動・接続してください。"
+"tanuki.lobbyVoice.outdated" : "ベタクル v{0} を検出：v3.2.35以降へ更新してください。"
+"tanuki.lobbyVoice.unknownVersion" : "ベタクルのバージョンを確認できません：v3.2.35以降へ更新してください。"
+"tanuki.lobbyVoice.outdatedHost" : "ホスト側ベタクル v{0} を検出：ホストにv3.2.35以降への更新を依頼してください。"
+"tanuki.lobbyVoice.unknownVersionHost" : "ホスト側ベタクルのバージョンを確認できません：v3.2.35以降か確認してください。"

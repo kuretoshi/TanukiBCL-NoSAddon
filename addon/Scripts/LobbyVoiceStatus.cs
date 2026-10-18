@@ -49,6 +49,8 @@ public static class LobbyVoiceStatus
             entered = clock.Elapsed.TotalSeconds; nextAttempt = 0;
         }
         bool connected = MicrophoneTest.Connected;
+        string? version = MicrophoneTest.ConnectedVersion;
+        bool fromHost = MicrophoneTest.FromHostRelay;
         try
         {
             if (!MicrophoneTest.IsRunning)
@@ -60,6 +62,8 @@ public static class LobbyVoiceStatus
                 }
                 bridge?.TryReadSample(out _, out _, out _);
                 connected = bridge?.Connected ?? false;
+                version = bridge?.LatestVersion;
+                fromHost = bridge?.LatestFromHostRelay ?? false;
             }
         }
         catch (Exception ex) when (ex is System.IO.IOException || ex is System.Net.Sockets.SocketException || ex is UnauthorizedAccessException)
@@ -88,6 +92,11 @@ public static class LobbyVoiceStatus
             notice.color = new UnityEngine.Color(1f, .65f, .2f);
             notice.text = NebulaAPI.Language.Translate("tanuki.lobbyVoice.disconnected");
         }
-        notice.gameObject.SetActive(!connected && clock.Elapsed.TotalSeconds - entered >= 3);
+        string key = !connected ? "disconnected"
+            : version == null ? "unknownVersion" : "outdated";
+        if (connected && fromHost) key += "Host";
+        notice.text = string.Format(NebulaAPI.Language.Translate("tanuki.lobbyVoice." + key), version ?? "");
+        notice.gameObject.SetActive((!connected || !VoiceVersionRequirement.IsSupported(version)) &&
+            clock.Elapsed.TotalSeconds - entered >= 3);
     }
 }

@@ -71,21 +71,30 @@ new Shape(2, new Color32(100,220,180,255), 4f, new float[] {102f,66f,109f,72f,10
 new Shape(2, new Color32(100,220,180,255), 4f, new float[] {114f,59f,122f,72f,114f,86f})
 }
     };
+    private static Color SampleColor(int kind, float x, float y)
+    {
+        Color color=Color.clear;
+        foreach(var shape in art[kind]) if(shape.Contains(x,y)) color=shape.Color;
+        return color;
+    }
+    private static Color PixelColor(int kind, int x, int y)
+    {
+            Color sum=Color.clear;
+            for(int sy=0;sy<2;sy++)for(int sx=0;sx<2;sx++) {
+                Color c=SampleColor(kind,(x+(sx+.5f)/2)/2,128-(y+(sy+.5f)/2)/2);
+                sum+=c*.25f;
+            }
+            // Straight alpha avoids dark edges on the white UI frame.
+            if(sum.a>0){sum.r/=sum.a;sum.g/=sum.a;sum.b/=sum.a;}
+        return sum;
+    }
     private static Sprite Create(int kind)
     {
         if(cache[kind]!=null)return cache[kind]!;
         const int size=256;
         var pixels=new Color[size*size];
         for(int y=0;y<size;y++)for(int x=0;x<size;x++) {
-            Color sum=Color.clear;
-            for(int sy=0;sy<2;sy++)for(int sx=0;sx<2;sx++) {
-                Color c=Color.clear;
-                foreach(var shape in art[kind])if(shape.Contains((x+(sx+.5f)/2)/2,128-(y+(sy+.5f)/2)/2))c=shape.Color;
-                sum+=c*.25f;
-            }
-            // Straight alpha avoids dark edges on the white UI frame.
-            if(sum.a>0){sum.r/=sum.a;sum.g/=sum.a;sum.b/=sum.a;}
-            pixels[y*size+x]=sum;
+            pixels[y*size+x]=PixelColor(kind,x,y);
         }
         var texture=new Texture2D(size,size,TextureFormat.RGBA32,false);
         texture.filterMode=FilterMode.Bilinear; texture.wrapMode=TextureWrapMode.Clamp;

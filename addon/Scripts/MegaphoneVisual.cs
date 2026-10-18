@@ -72,34 +72,7 @@ public sealed class MegaphoneVisual
         var pixels = new Color[size * size];
         for (int y = 0; y < size; y++) for (int x = 0; x < size; x++)
         {
-            var p = new Vector2((x + .5f) / size * 1.5f - .3f, (y + .5f) / size * 1.5f - .75f);
-            if (icon)
-            {
-                // Hero angle for the HUD icon; the world-space weapon stays level.
-                // Leave room for the outline so the rear corner cannot be clipped.
-                var offset = (p - new Vector2(.40f, -.10f)) / .86f;
-                float a = -12f * Mathf.Deg2Rad;
-                p = new Vector2(offset.x * Mathf.Cos(a) - offset.y * Mathf.Sin(a),
-                    offset.x * Mathf.Sin(a) + offset.y * Mathf.Cos(a)) + new Vector2(.40f, -.10f);
-            }
-            Color color = Color.clear;
-            foreach (var plate in plates) if (Inside(p, plate.Points)) color = plate.Color;
-            if (Mathf.Abs(p.x + .21f) < .013f && Mathf.Abs(p.y) < .12f) color = new Color(.73f,.82f,.9f);
-            if (p.x > -.105f && p.x < .035f && p.y < -.28f && p.y > -.54f && Mathf.Repeat(-p.y, .08f) < .017f) color = new Color(.07f,.10f,.15f);
-            if (p.x > .27f && p.x < .49f && Mathf.Abs(p.y) < .11f && Mathf.Repeat(p.x, .07f) < .026f) color = new Color(.04f,.10f,.17f);
-            if (portable)
-            {
-                // Same armored shell, mint trim and a three-cell battery badge.
-                if (color.a > 0 && color.r > .9f && color.g > .4f && color.g < .7f) color = new Color(.24f, .92f, .64f);
-                if (p.x > .24f && p.x < .49f && Mathf.Abs(p.y) < .07f)
-                    color = Mathf.Repeat(p.x - .24f, .085f) < .057f ? new Color(.4f, 1f, .72f) : new Color(.04f, .12f, .14f);
-            }
-            if (icon && p.x > .85f)
-            {
-                float r = (p - new Vector2(.72f, 0)).magnitude;
-                if (Mathf.Abs(r - .25f) < .014f || Mathf.Abs(r - .40f) < .014f) color = new Color(.20f,.92f,1f);
-            }
-            pixels[y * size + x] = color;
+            pixels[y * size + x] = PixelColor(x, y, size, icon, portable);
         }
         if (icon)
         {
@@ -107,17 +80,7 @@ public sealed class MegaphoneVisual
             var outlined = (Color[])pixels.Clone();
             for (int y = 0; y < size; y++) for (int x = 0; x < size; x++)
             {
-                if (pixels[y * size + x].a > 0) continue;
-                int nearest = 122;
-                for (int dy = -11; dy <= 11; dy++) for (int dx = -11; dx <= 11; dx++)
-                {
-                    int distance = dx * dx + dy * dy;
-                    int sx = x + dx, sy = y + dy;
-                    if (distance < nearest && sx >= 0 && sy >= 0 && sx < size && sy < size && pixels[sy * size + sx].a > 0)
-                        nearest = distance;
-                }
-                if (nearest <= 121) outlined[y * size + x] = nearest <= 9 || nearest > 64
-                    ? new Color(.02f,.03f,.05f,.95f) : new Color(.94f,.98f,1f);
+                outlined[y * size + x] = OutlinePixel(pixels, size, x, y);
             }
             pixels = outlined;
         }
@@ -127,6 +90,52 @@ public sealed class MegaphoneVisual
         if (portable) { if (icon) portableIconSprite = cached; else portableGunSprite = cached; }
         else { if (icon) iconSprite = cached; else gunSprite = cached; }
         return cached;
+    }
+    private static Color PixelColor(int x, int y, int size, bool icon, bool portable)
+    {
+        var p = new Vector2((x + .5f) / size * 1.5f - .3f, (y + .5f) / size * 1.5f - .75f);
+        if (icon)
+        {
+            // Hero angle for the HUD icon; the world-space weapon stays level.
+            // Leave room for the outline so the rear corner cannot be clipped.
+            var offset = (p - new Vector2(.40f, -.10f)) / .86f;
+            float a = -12f * Mathf.Deg2Rad;
+            p = new Vector2(offset.x * Mathf.Cos(a) - offset.y * Mathf.Sin(a),
+                offset.x * Mathf.Sin(a) + offset.y * Mathf.Cos(a)) + new Vector2(.40f, -.10f);
+        }
+        Color color = Color.clear;
+        foreach (var plate in plates) if (Inside(p, plate.Points)) color = plate.Color;
+        if (Mathf.Abs(p.x + .21f) < .013f && Mathf.Abs(p.y) < .12f) color = new Color(.73f,.82f,.9f);
+        if (p.x > -.105f && p.x < .035f && p.y < -.28f && p.y > -.54f && Mathf.Repeat(-p.y, .08f) < .017f) color = new Color(.07f,.10f,.15f);
+        if (p.x > .27f && p.x < .49f && Mathf.Abs(p.y) < .11f && Mathf.Repeat(p.x, .07f) < .026f) color = new Color(.04f,.10f,.17f);
+        if (portable)
+        {
+            // Same armored shell, mint trim and a three-cell battery badge.
+            if (color.a > 0 && color.r > .9f && color.g > .4f && color.g < .7f) color = new Color(.24f, .92f, .64f);
+            if (p.x > .24f && p.x < .49f && Mathf.Abs(p.y) < .07f)
+                color = Mathf.Repeat(p.x - .24f, .085f) < .057f ? new Color(.4f, 1f, .72f) : new Color(.04f, .12f, .14f);
+        }
+        if (icon && p.x > .85f)
+        {
+            float r = (p - new Vector2(.72f, 0)).magnitude;
+            if (Mathf.Abs(r - .25f) < .014f || Mathf.Abs(r - .40f) < .014f) color = new Color(.20f,.92f,1f);
+        }
+        return color;
+    }
+    private static Color OutlinePixel(Color[] pixels, int size, int x, int y)
+    {
+                if (pixels[y * size + x].a > 0) return pixels[y * size + x];
+                int nearest = 122;
+                for (int dy = -11; dy <= 11; dy++) for (int dx = -11; dx <= 11; dx++)
+                {
+                    int distance = dx * dx + dy * dy;
+                    int sx = x + dx, sy = y + dy;
+                    if (distance < nearest && sx >= 0 && sy >= 0 && sx < size && sy < size && pixels[sy * size + sx].a > 0)
+                        nearest = distance;
+                }
+                if (nearest <= 121) return nearest <= 9 || nearest > 64
+                    ? new Color(.02f,.03f,.05f,.95f) : new Color(.94f,.98f,1f);
+        return pixels[y * size + x];
     }
     public MegaphoneVisual()
     {

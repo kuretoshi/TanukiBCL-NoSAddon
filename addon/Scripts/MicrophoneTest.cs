@@ -17,6 +17,8 @@ public static class MicrophoneTest
     private static string? error;
     public static bool IsRunning => bridge != null;
     public static bool Connected => bridge?.Connected ?? false;
+    public static string? ConnectedVersion => bridge?.LatestVersion;
+    public static bool FromHostRelay => bridge?.LatestFromHostRelay ?? false;
 
     public static IConfiguration Option(Func<float> threshold, Func<float>? fastThreshold = null)
         => NebulaAPI.Configurations.Configuration(() => null, () =>

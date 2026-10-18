@@ -9,4 +9,4 @@
   <ItemGroup><Compile Include="../addon/Scripts/SharedVoiceBridge.cs" Link="SharedVoiceBridge.cs" /></ItemGroup>
   <ItemGroup><Compile Include="../addon/Scripts/MegaphoneBattery.cs" Link="MegaphoneBattery.cs" /></ItemGroup>
 <ItemGroup><Compile Include="../addon/Scripts/DirectVoiceServer.cs" Link="DirectVoiceServer.cs" /></ItemGroup>
-<ItemGroup><Compile Include="../addon/Scripts/HostVoiceFeed.cs" Link="HostVoiceFeed.cs" /></ItemGroup></Project>
+<ItemGroup><Compile Include="../addon/Scripts/HostVoiceFeed.cs" Link="HostVoiceFeed.cs" /></ItemGroup><ItemGroup><Compile Include="../addon/Scripts/VoiceVersionRequirement.cs" Link="VoiceVersionRequirement.cs" /></ItemGroup></Project>

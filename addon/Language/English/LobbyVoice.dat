@@ -1,1 +1,5 @@
 "tanuki.lobbyVoice.disconnected" : "BetterCrewLink disconnected: start and connect TanukiBCL."
+"tanuki.lobbyVoice.outdated" : "TanukiBCL v{0} detected: update to v3.2.35 or later."
+"tanuki.lobbyVoice.unknownVersion" : "Cannot verify TanukiBCL version: update to v3.2.35 or later."
+"tanuki.lobbyVoice.outdatedHost" : "Host TanukiBCL v{0} detected: ask the host to update to v3.2.35 or later."
+"tanuki.lobbyVoice.unknownVersionHost" : "Cannot verify host TanukiBCL version: check that it is v3.2.35 or later."

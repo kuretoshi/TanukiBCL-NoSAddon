@@ -8,13 +8,13 @@ namespace TanukiBCL.Roles;
 
 public static class DyingVoiceBroadcast
 {
-    private static readonly Dictionary<byte, (long started, float seconds, float range, float x, float y)> entries = new();
+    private static readonly Dictionary<byte, (long started, float seconds, float range, float x, float y, bool loop)> entries = new();
     private static long lastWrite;
     private static readonly string path = Path.Combine(Environment.GetEnvironmentVariable("LOCALAPPDATA") ??
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "TanukiBCL", "NoS", "dying-voice-" + Environment.ProcessId + ".json");
-    public static void Set(byte id, long started, float seconds, float range, float x, float y)
+    public static void Set(byte id, long started, float seconds, float range, float x, float y, bool loop)
     {
-        entries[id] = (started, seconds, range, x, y); Publish(false);
+        entries[id] = (started, seconds, range, x, y, loop); Publish(false);
     }
     public static void Remove(byte id)
     {
@@ -42,6 +42,7 @@ public static class DyingVoiceBroadcast
             json.Append("{\"playerId\":").Append(pair.Key).Append(",\"started\":").Append(e.started)
                 .Append(",\"seconds\":").Append(e.seconds.ToString("R", CultureInfo.InvariantCulture))
                 .Append(",\"range\":").Append(e.range.ToString("R", CultureInfo.InvariantCulture))
+                .Append(",\"loop\":").Append(e.loop ? "true" : "false")
                 .Append(",\"x\":").Append(e.x.ToString("R", CultureInfo.InvariantCulture))
                 .Append(",\"y\":").Append(e.y.ToString("R", CultureInfo.InvariantCulture)).Append('}');
         }

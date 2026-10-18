@@ -300,3 +300,32 @@ using (var hostReader = new SharedVoiceBridge(251, Path.Combine(Path.GetTempPath
  Check(hostReader.TryReadSample(out _, out hostRms, out hostActive) && hostRms == .65 && hostActive && hostReader.Connected, "host feed reaches actual role bridge");
 }
 Console.WriteLine("PASS host relay validation and role bridge");
+
+Check(!VoiceVersionRequirement.IsSupported(null), "missing client version needs update notice");
+Check(!VoiceVersionRequirement.IsSupported("3.2.34"), "old client version needs update notice");
+Check(VoiceVersionRequirement.IsSupported("3.2.35"), "minimum client version accepted");
+Check(VoiceVersionRequirement.IsSupported("3.2.36"), "newer client version accepted");
+Check(VoiceVersionRequirement.IsSupported("3.2.35-net-beta.1"), "NET equivalent version accepted");
+Check(!VoiceVersionRequirement.IsSupported("3.2.35garbage"), "malformed client version rejected");
+
+var versionDir = Path.Combine(Path.GetTempPath(), "tanuki-version-" + Guid.NewGuid().ToString("N"));
+using (var versionBridge = new VoiceBridge(7, directory: versionDir, discoveryPort: 0))
+{
+    using var descriptor = System.Text.Json.JsonDocument.Parse(File.ReadAllText(versionBridge.DescriptorPath));
+    var versionPort = descriptor.RootElement.GetProperty("port").GetInt32();
+    var versionToken = descriptor.RootElement.GetProperty("token").GetString();
+    Check(descriptor.RootElement.GetProperty("reportVersion").GetBoolean(), "version reporting negotiated");
+    using var versionSender = new System.Net.Sockets.UdpClient();
+    void SendVersionSample(long sequence, string suffix)
+    {
+        var payload = System.Text.Encoding.ASCII.GetBytes($"TBCL1|{versionToken}|{sequence}|{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}|0.1|0{suffix}");
+        versionSender.Send(payload, payload.Length, "127.0.0.1", versionPort);
+        Thread.Sleep(20);
+    }
+    SendVersionSample(1, "|3.2.35");
+    Check(versionBridge.TryReadSample(out _, out _, out _) && versionBridge.LatestVersion == "3.2.35", "authenticated sample carries client version");
+    SendVersionSample(2, "");
+    Check(versionBridge.TryReadSample(out _, out _, out _) && versionBridge.LatestVersion == null, "legacy sample remains connected with unknown version");
+}
+Directory.Delete(versionDir, true);
+Console.WriteLine("PASS lobby minimum version and negotiated UDP version checks");

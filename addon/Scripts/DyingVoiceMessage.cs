@@ -18,9 +18,13 @@ public sealed class DyingVoiceMessage : DefinedAllocatableModifierTemplate, Defi
         "options.role.tanukiDyingVoice.seconds", (1f, 30f, 1f), 5f, FloatConfigurationDecorator.Second);
     private static readonly FloatConfiguration Range = NebulaAPI.Configurations.Configuration(
         "options.role.tanukiDyingVoice.range", (.5f, 10f, .5f), 2.5f);
+    private static readonly BoolConfiguration ShowIcon = NebulaAPI.Configurations.Configuration(
+        "options.role.tanukiDyingVoice.showIcon", true);
+    private static readonly BoolConfiguration LoopPlayback = NebulaAPI.Configurations.Configuration(
+        "options.role.tanukiDyingVoice.loopPlayback", false);
     public static readonly DyingVoiceMessage MyRole = new();
     private DyingVoiceMessage() : base("tanukiDyingVoice", "TDVM", new Virial.Color(205, 10, 19),
-        new IConfiguration[] { Seconds, Range })
+        new IConfiguration[] { Seconds, Range, ShowIcon, LoopPlayback })
     {
         ConfigurationHolder!.Illustration = DyingVoiceVisual.Icon;
     }
@@ -74,7 +78,7 @@ public sealed class DyingVoiceMessage : DefinedAllocatableModifierTemplate, Defi
             Publish();
         }
 
-        private void Publish() => DyingVoiceBroadcast.Set(MyPlayer.PlayerId, started, duration, range, location.x, location.y);
+        private void Publish() => DyingVoiceBroadcast.Set(MyPlayer.PlayerId, started, duration, range, location.x, location.y, LoopPlayback);
 
         private void Update(GameUpdateEvent ev)
         {
@@ -107,6 +111,11 @@ public sealed class DyingVoiceMessage : DefinedAllocatableModifierTemplate, Defi
                 recordingNotice.gameObject.SetActive(!ready && MeetingHud.Instance == null);
                 recordingNotice.text = string.Format(NebulaAPI.Language.Translate("role.tanukiDyingVoice.recording"),
                     Math.Ceiling(Math.Max(0, duration - (DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - started) / 1000d)));
+            }
+            if (!ShowIcon)
+            {
+                if (marker != null) marker.SetActive(false);
+                return;
             }
             if (marker == null)
             {

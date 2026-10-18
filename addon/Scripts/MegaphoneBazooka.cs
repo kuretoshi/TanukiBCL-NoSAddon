@@ -108,40 +108,41 @@ public sealed class MegaphoneBazooka : DefinedSingleAbilityRoleTemplate<Megaphon
         internal void Receive(int id, int command, float newAngle, float newWidth, float x, float y, float newEnergy)
         {
             if (!float.IsFinite(newAngle) || !float.IsFinite(newWidth) || !float.IsFinite(x) || !float.IsFinite(y) || !float.IsFinite(newEnergy)) return;
-            if (command == 0)
+            if (command != 0 && id != shotId) return;
+            switch (command)
             {
-                if (id <= shotId || MyPlayer.IsDead || MeetingHud.Instance != null || ExileController.Instance != null) return;
-                Clear();
-                shotId = id;
-                phase = Phase.Charging;
-                MegaphoneBroadcast.Set(MyPlayer.PlayerId, 0, VoiceRange, VoiceEffect, id, false, true);
-                charge.Reset();
-                elapsed = 0;
-                visual = new MegaphoneVisual();
-                if (SoundEnabled) audio = new MegaphoneAudio(x, y, SoundVolume);
-                if (AmOwner) { button?.SetLabel("tanukiMegaphone.charge"); button?.StartEffect(); }
-                // This API broadcasts its own RPC: only the shooter sends the lock.
-                if (AmOwner)
-                {
-                    MyPlayer.GainSpeedAttribute(0f, (float)ChargeTime + 6f, false, 100, "TanukiMegaphone:charge");
-                    movementLocked = true;
-                }
+                case 0:
+                    if (id <= shotId || MyPlayer.IsDead || MeetingHud.Instance != null || ExileController.Instance != null) return;
+                    Clear();
+                    shotId = id;
+                    phase = Phase.Charging;
+                    MegaphoneBroadcast.Set(MyPlayer.PlayerId, 0, VoiceRange, VoiceEffect, id, false, true);
+                    charge.Reset();
+                    elapsed = 0;
+                    visual = new MegaphoneVisual();
+                    if (SoundEnabled) audio = new MegaphoneAudio(x, y, SoundVolume);
+                    if (AmOwner) { button?.SetLabel("tanukiMegaphone.charge"); button?.StartEffect(); }
+                    // This API broadcasts its own RPC: only the shooter sends the lock.
+                    if (AmOwner)
+                    {
+                        MyPlayer.GainSpeedAttribute(0f, (float)ChargeTime + 6f, false, 100, "TanukiMegaphone:charge");
+                        movementLocked = true;
+                    }
+                    break;
+                case 2:
+                    Finish(); return;
+                case 1:
+                    if (phase != Phase.Charging) return;
+                    phase = Phase.Firing;
+                    elapsed = 0;
+                    attempted.Clear();
+                    if (AmOwner) { button?.InterruptEffect(); button?.SetLabel("tanukiMegaphone.firing"); }
+                    break;
+                case 3:
+                    if (phase != Phase.Charging) return;
+                    break;
+                default: return;
             }
-            else if (id != shotId) return;
-            else if (command == 2) { Finish(); return; }
-            else if (command == 1)
-            {
-                if (phase != Phase.Charging) return;
-                phase = Phase.Firing;
-                elapsed = 0;
-                attempted.Clear();
-                if (AmOwner) { button?.InterruptEffect(); button?.SetLabel("tanukiMegaphone.firing"); }
-            }
-            else if (command == 3)
-            {
-                if (phase != Phase.Charging) return;
-            }
-            else return;
             angle = (float)MegaphoneCharge.Aim(newAngle, AimMode.GetValue());
             width = Mathf.Clamp(newWidth, MinWidth, MaxWidth);
             voiceEnergy = Mathf.Clamp01(newEnergy);
@@ -173,23 +174,7 @@ public sealed class MegaphoneBazooka : DefinedSingleAbilityRoleTemplate<Megaphon
             {
                 if (AmOwner)
                 {
-                    angle = ReadAim();
-                    width = (float)charge.Width(MinWidth, MaxWidth);
-                    voiceEnergy = (float)charge.Energy;
-                    var position = MyPlayer.TruePosition;
-                    originX = position.x; originY = position.y;
-                    previewTimer += ev.DeltaTime;
-                    if (elapsed >= (float)ChargeTime)
-                    {
-                        float beamX = originX + Mathf.Cos(angle) * 1.85f;
-                        float beamY = originY + Mathf.Sin(angle) * 1.85f;
-                        StateRpc.Invoke((MyPlayer, shotId, 1, angle, width, (beamX, beamY), voiceEnergy));
-                    }
-                    else if (previewTimer >= .1f)
-                    {
-                        previewTimer = 0;
-                        StateRpc.Invoke((MyPlayer, shotId, 3, angle, width, (originX, originY), voiceEnergy));
-                    }
+                    UpdateChargeOwner(ev.DeltaTime);
                 }
                 // Timeout protects other clients if the shooter disconnects before sending fire.
                 else if (elapsed > (float)ChargeTime + 2f) { Finish(); return; }
@@ -204,15 +189,7 @@ public sealed class MegaphoneBazooka : DefinedSingleAbilityRoleTemplate<Megaphon
                 if (elapsed >= 5f) { Finish(); return; } // Nova's beam duration default.
                 if (AmOwner)
                 {
-                    foreach (var target in NebulaAPI.CurrentGame!.GetAllPlayers())
-                    {
-                        if (target.IsDead || target.IsDisconnected || target.PlayerId == MyPlayer.PlayerId || attempted.Contains(target.PlayerId)) continue;
-                        if (!FriendlyFire && target.IsImpostor) continue;
-                        var position = target.TruePosition;
-                        if (!MegaphoneCharge.Hits(position.x - originX, position.y - originY, angle, width)) continue;
-                        attempted.Add(target.PlayerId);
-                        MyPlayer.MurderPlayer(target, PlayerStates.Dead, null, KillParameter.RemoteKill);
-                    }
+                    HitTargets();
                 }
             }
             // The beam renderer begins .75 units after the megaphone root.
@@ -221,6 +198,38 @@ public sealed class MegaphoneBazooka : DefinedSingleAbilityRoleTemplate<Megaphon
             visual?.Draw(originX + Mathf.Cos(angle) * offset, originY + Mathf.Sin(angle) * offset, angle, width, phase == Phase.Firing, voiceEnergy);
         }
 
+        private void UpdateChargeOwner(float deltaTime)
+        {
+            angle = ReadAim();
+            width = (float)charge.Width(MinWidth, MaxWidth);
+            voiceEnergy = (float)charge.Energy;
+            var position = MyPlayer.TruePosition;
+            originX = position.x; originY = position.y;
+            previewTimer += deltaTime;
+            if (elapsed >= (float)ChargeTime)
+            {
+                float beamX = originX + Mathf.Cos(angle) * 1.85f;
+                float beamY = originY + Mathf.Sin(angle) * 1.85f;
+                StateRpc.Invoke((MyPlayer, shotId, 1, angle, width, (beamX, beamY), voiceEnergy));
+            }
+            else if (previewTimer >= .1f)
+            {
+                previewTimer = 0;
+                StateRpc.Invoke((MyPlayer, shotId, 3, angle, width, (originX, originY), voiceEnergy));
+            }
+        }
+        private void HitTargets()
+        {
+            foreach (var target in NebulaAPI.CurrentGame!.GetAllPlayers())
+            {
+                if (target.IsDead || target.IsDisconnected || target.PlayerId == MyPlayer.PlayerId || attempted.Contains(target.PlayerId)) continue;
+                if (!FriendlyFire && target.IsImpostor) continue;
+                var position = target.TruePosition;
+                if (!MegaphoneCharge.Hits(position.x - originX, position.y - originY, angle, width)) continue;
+                attempted.Add(target.PlayerId);
+                MyPlayer.MurderPlayer(target, PlayerStates.Dead, null, KillParameter.RemoteKill);
+            }
+        }
         private void Cancel()
         {
             if (AmOwner) StateRpc.Invoke((MyPlayer, shotId, 2, 0, MinWidth, (0f, 0f), 0));

@@ -1,0 +1,4 @@
+"tanuki.news.dyingVoice.title" : "Tanuki Addon: Introducing Dying Voice Message!"
+"tanuki.news.dyingVoice.shortTitle" : "Tanuki Addon: New Modifier"
+"tanuki.news.dyingVoice.subtitle" : "Leave your last words here."
+"tanuki.news.dyingVoice.body" : "Dying Voice Message is a modifier whose assignment is hidden from its owner while alive.<br><br>After death, your voice is automatically recorded for a limited time and left at the death location. Living players who approach hear the recording with a radio-style effect.<br><br>Your last words might help solve the case.<br><br>The recording duration, playback range, location icon visibility and looping playback can all be configured.<br><br>Requires Tanuki BetterCrewLink v3.2.35 or later."

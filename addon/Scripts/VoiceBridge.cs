@@ -32,6 +32,7 @@ public sealed class VoiceBridge : IDisposable
     public double LatestRms { get; private set; }
     public bool LatestActive { get; private set; }
     public bool LatestFromHostRelay { get; private set; }
+    public string? LatestVersion { get; private set; }
     public bool Connected => clock.Elapsed.TotalSeconds - lastSample <= 1;
     public string DescriptorPath => descriptorPath;
 
@@ -48,7 +49,7 @@ public sealed class VoiceBridge : IDisposable
         Directory.CreateDirectory(directory);
         descriptorPath = Path.Combine(directory, "voice-role.json");
         int port = ((IPEndPoint)socket.Client.LocalEndPoint!).Port;
-        descriptor = "{\"protocol\":1,\"role\":\"" + role + "\",\"playerId\":" + playerId +
+        descriptor = "{\"protocol\":1,\"reportVersion\":true,\"role\":\"" + role + "\",\"playerId\":" + playerId +
             ",\"pid\":" + Environment.ProcessId + ",\"port\":" + port + ",\"token\":\"" + token + "\"}";
         try
         {
@@ -87,6 +88,7 @@ public sealed class VoiceBridge : IDisposable
         if (HostVoiceRelay.TryRead(playerId, ref hostConsumed, out rms, out active))
         {
             LatestFromHostRelay = true;
+            LatestVersion = HostVoiceRelay.VersionFor(playerId);
             seq = ++delivered;
             LatestRms = rms; LatestActive = active; lastSample = clock.Elapsed.TotalSeconds;
             return true;
@@ -103,6 +105,7 @@ public sealed class VoiceBridge : IDisposable
         {
             if (!direct.TryRead(playerId, ref directConsumed, out rms, out active)) return false;
             LatestFromHostRelay = false;
+            LatestVersion = null;
             seq = ++delivered;
             LatestRms = rms; LatestActive = active; lastSample = clock.Elapsed.TotalSeconds;
             return true;
@@ -133,7 +136,7 @@ public sealed class VoiceBridge : IDisposable
         if (socket.Available > 0) { gate.Reset(); return false; }
         if (latest == null) return false;
         string[] parts = latest.Split('|');
-        if (parts.Length != 6 || parts[0] != "TBCL1" || parts[1] != token ||
+        if ((parts.Length != 6 && parts.Length != 7) || parts[0] != "TBCL1" || parts[1] != token ||
             !long.TryParse(parts[2], NumberStyles.None, CultureInfo.InvariantCulture, out seq) ||
             !long.TryParse(parts[3], NumberStyles.None, CultureInfo.InvariantCulture, out long unixMs) ||
             !double.TryParse(parts[4], NumberStyles.Float, CultureInfo.InvariantCulture, out rms) ||
@@ -142,6 +145,7 @@ public sealed class VoiceBridge : IDisposable
         long age = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - unixMs;
         if (age < -100 || age > 150) { gate.Reset(); return false; }
         if (seq <= sequence || !double.IsFinite(rms) || rms < 0 || rms > 1) return false;
+        LatestVersion = parts.Length == 7 ? VoiceVersionRequirement.Normalize(parts[6]) : null;
         sequence = seq;
         delivered = Math.Max(delivered + 1, seq);
         seq = delivered;

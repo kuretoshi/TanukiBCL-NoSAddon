@@ -1,0 +1,50 @@
+using System;
+using System.Collections.Generic;
+using AmongUs.Data;
+using AmongUs.Data.Player;
+using Assets.InnerNet;
+using HarmonyLib;
+using Il2CppInterop.Runtime.InteropTypes.Arrays;
+using Nebula;
+using Virial.Attributes;
+using Virial.Runtime;
+
+namespace TanukiBCL.Roles;
+
+[NebulaPreprocess(PreprocessPhase.PostRoles)]
+public static class AddonAnnouncements
+{
+    // Keep both identifiers stable so reopening the list does not duplicate news
+    // or mark an already-read announcement as new on every launch.
+    private const int DyingVoiceNumber = 267101801;
+    private const string DyingVoiceId = "TanukiBCLNoSAddon.DyingVoiceMessage";
+
+    public static void Preprocess(NebulaPreprocessor preprocessor)
+    {
+        new Harmony("tanuki.bcl.roles.announcements").Patch(
+            AccessTools.Method(typeof(PlayerAnnouncementData), nameof(PlayerAnnouncementData.SetAnnouncements)),
+            prefix: new HarmonyMethod(typeof(AddonAnnouncements), nameof(AddNews)) { priority = Priority.First });
+    }
+
+    public static void AddNews([HarmonyArgument(0)] ref Il2CppReferenceArray<Announcement> announcements)
+    {
+        var news = new List<Announcement>();
+        foreach (var item in announcements)
+        {
+            if (item.Number == DyingVoiceNumber && item.Id == DyingVoiceId) continue;
+            news.Add(item);
+        }
+        news.Add(new Announcement {
+            Number = DyingVoiceNumber,
+            Id = DyingVoiceId,
+            Title = Virial.NebulaAPI.Language.Translate("tanuki.news.dyingVoice.title"),
+            ShortTitle = Virial.NebulaAPI.Language.Translate("tanuki.news.dyingVoice.shortTitle"),
+            SubTitle = Virial.NebulaAPI.Language.Translate("tanuki.news.dyingVoice.subtitle"),
+            Text = Virial.NebulaAPI.Language.Translate("tanuki.news.dyingVoice.body"),
+            Language = (uint)DataManager.Settings.Language.CurrentLanguage,
+            Date = "2026-10-18T00:00:00Z"
+        });
+        news.Sort((left, right) => string.Compare(right.Date, left.Date, StringComparison.Ordinal));
+        announcements = news.ToArray();
+    }
+}
