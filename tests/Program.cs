@@ -302,10 +302,10 @@ using (var hostReader = new SharedVoiceBridge(251, Path.Combine(Path.GetTempPath
 Console.WriteLine("PASS host relay validation and role bridge");
 
 Check(!VoiceVersionRequirement.IsSupported(null), "missing client version needs update notice");
-Check(!VoiceVersionRequirement.IsSupported("3.2.34"), "old client version needs update notice");
-Check(VoiceVersionRequirement.IsSupported("3.2.35"), "minimum client version accepted");
-Check(VoiceVersionRequirement.IsSupported("3.2.36"), "newer client version accepted");
-Check(VoiceVersionRequirement.IsSupported("3.2.35-net-beta.1"), "NET equivalent version accepted");
+Check(!VoiceVersionRequirement.IsSupported("3.2.35"), "old client version needs update notice");
+Check(VoiceVersionRequirement.IsSupported("3.2.36"), "minimum client version accepted");
+Check(VoiceVersionRequirement.IsSupported("3.2.37"), "newer client version accepted");
+Check(VoiceVersionRequirement.IsSupported("3.2.36-net-beta.1"), "NET equivalent version accepted");
 Check(!VoiceVersionRequirement.IsSupported("3.2.35garbage"), "malformed client version rejected");
 
 var versionDir = Path.Combine(Path.GetTempPath(), "tanuki-version-" + Guid.NewGuid().ToString("N"));
@@ -329,3 +329,60 @@ using (var versionBridge = new VoiceBridge(7, directory: versionDir, discoveryPo
 }
 Directory.Delete(versionDir, true);
 Console.WriteLine("PASS lobby minimum version and negotiated UDP version checks");
+
+using (var pcm = new MemoryStream(new byte[] { 0, 128, 255, 127, 255, 255, 0, 0 }))
+{
+    var decoded = MegaphoneChargeSound.Read(pcm);
+    Check(decoded.SequenceEqual(new[] { -1f, 32767 / 32768f, -1 / 32768f, 0f }), "charge PCM preserves signed stereo samples");
+}
+foreach (var malformed in new[] { Array.Empty<byte>(), new byte[] { 0, 0 }, new byte[] { 0, 0, 0 } })
+{
+    bool rejected = false;
+    try { MegaphoneChargeSound.Read(new MemoryStream(malformed)); }
+    catch (InvalidDataException) { rejected = true; }
+    Check(rejected, "charge PCM rejects incomplete frames");
+}
+Check(Math.Abs(MegaphoneChargeSound.PlaybackPitch(4, 3) - 4f / 3) < .00001f, "charge audio follows configured charge time");
+Check(MegaphoneChargeSound.PlaybackPitch(4, .5f) == 3f, "charge pitch respects Unity AudioSource limit");
+Console.WriteLine("PASS charge sound PCM decoding and playback timing");
+
+var interviewPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "TanukiBCL", "NoS", "interviews-" + Environment.ProcessId + ".json");
+try
+{
+    InterviewerBroadcast.Set(new InterviewState { playerId = 1, started = 10000, seconds = 5, visible = new byte[] { 1, 2 } });
+    Thread.Sleep(110);
+    InterviewerBroadcast.Set(new InterviewState { playerId = 2, started = 10001, seconds = 5, visible = new byte[] { 2 } });
+    using (var document = System.Text.Json.JsonDocument.Parse(File.ReadAllText(interviewPath)))
+    {
+        var players = document.RootElement.GetProperty("players");
+        Check(players.GetArrayLength() == 2, "Interviewer bridge keeps independent recorders");
+        Check(players[0].GetProperty("visible").ValueKind == System.Text.Json.JsonValueKind.Array && players[0].GetProperty("visible")[1].GetInt32() == 2, "Interviewer bridge sends integer IDs, not Base64 bytes");
+    }
+    InterviewerBroadcast.Remove(1);
+    Check(File.Exists(interviewPath), "Removing one interviewer preserves the other recording");
+    InterviewerBroadcast.Remove(2);
+    Check(!File.Exists(interviewPath), "Removing the last interviewer removes the per-process descriptor");
+}
+finally { InterviewerBroadcast.Remove(1); InterviewerBroadcast.Remove(2); }
+Console.WriteLine("PASS interviewer multi-recorder visibility wire format and cleanup");
+
+const long interviewStartNow = 1792403078512;
+Check(InterviewerTiming.IsRecording(interviewStartNow, 0, 5, interviewStartNow + 17), "Modern Unix timestamp must not end a five-second recording after one frame");
+Check(InterviewerTiming.IsRecording(interviewStartNow, 0, 5, interviewStartNow + 4999), "Interviewer records through the full configured duration");
+Check(!InterviewerTiming.IsRecording(interviewStartNow, 0, 5, interviewStartNow + 5000), "Interviewer stops at the exact configured deadline");
+Check(!InterviewerTiming.IsRecording(interviewStartNow, interviewStartNow + 100, 5, interviewStartNow + 200), "Meeting interruption ends recording immediately");
+Check(InterviewerTiming.CapturedEnd(interviewStartNow, interviewStartNow + 120000, interviewStartNow + 121500, 5) == interviewStartNow + 1500, "Sender clock skew does not change the captured duration");
+Check(InterviewerTiming.CapturedEnd(interviewStartNow, interviewStartNow + 120000, interviewStartNow + 130000, 5) == interviewStartNow + 5000, "Late stop is capped at configured seconds");
+Console.WriteLine("PASS interviewer modern timestamp precision, exact deadline, meeting interruption and sender clock skew");
+
+var interviewPlays = new InterviewerPlaybackLimit();
+Check(interviewPlays.Remaining(2) == 2 && interviewPlays.TryUse(2, 100), "A meeting starts with its full playback allowance");
+Check(!interviewPlays.TryUse(2, 100) && interviewPlays.Remaining(2) == 1, "Duplicate replay requests do not consume another use");
+Check(interviewPlays.TryUse(2, 101) && interviewPlays.Remaining(2) == 0 && !interviewPlays.TryUse(2, 102), "The last allowed playback succeeds and later requests are blocked");
+interviewPlays.ResetMeeting();
+Check(interviewPlays.Remaining(2) == 2 && !interviewPlays.TryUse(2, 101), "A new meeting restores uses without admitting a delayed duplicate");
+Check(interviewPlays.TryUse(1, 103) && !interviewPlays.TryUse(1, 104), "One-play meetings reject the second play");
+interviewPlays.ResetMeeting();
+for (long request = 200; request < 220; request++) Check(interviewPlays.TryUse(0, request), "Unlimited playback remains available beyond ten uses");
+Check(interviewPlays.Remaining(0) == -1, "Unlimited playback uses an unlimited display value");
+Console.WriteLine("PASS interviewer finite/unlimited playback, boundary, duplicate rejection and per-meeting reset");

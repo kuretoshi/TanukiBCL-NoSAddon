@@ -8,11 +8,24 @@ internal sealed class MegaphoneAudio : IDisposable
 {
     private static readonly AudioClip?[] clips = new AudioClip?[5];
     private readonly GameObject root;
-    private readonly AudioSource loop;
+    private readonly AudioSource charge;
     private readonly AudioSource transient;
     private readonly float gain;
     private readonly float x, y;
     private bool firing;
+
+    private static AudioClip ChargeClip()
+    {
+        if (clips[1] != null) return clips[1]!;
+        using var stream = Virial.NebulaAPI.GetAddon("tanuki.bcl.roles")?.GetResource("Audio/megaphone-charge.pcm")?.AsStream()
+            ?? throw new System.IO.FileNotFoundException("Missing megaphone charge sound.");
+        var samples = MegaphoneChargeSound.Read(stream);
+        var clip = AudioClip.Create("TanukiMegaphoneCharge", samples.Length / MegaphoneChargeSound.Channels,
+            MegaphoneChargeSound.Channels, MegaphoneChargeSound.Rate, false);
+        clip.SetData(samples, 0);
+        clips[1] = clip;
+        return clip;
+    }
 
     private static AudioClip Clip(int kind)
     {
@@ -24,18 +37,18 @@ internal sealed class MegaphoneAudio : IDisposable
         return clip;
     }
 
-    public MegaphoneAudio(float x, float y, float volume)
+    public MegaphoneAudio(float x, float y, float volume, float chargeSeconds)
     {
         this.x = x; this.y = y; gain = volume;
         root = new GameObject("TanukiMegaphoneAudio");
-        loop = root.AddComponent<AudioSource>();
+        charge = root.AddComponent<AudioSource>();
         transient = root.AddComponent<AudioSource>();
-        loop.playOnAwake = transient.playOnAwake = false;
-        loop.loop = true;
-        loop.clip = Clip(1);
+        charge.playOnAwake = transient.playOnAwake = false;
+        charge.loop = false;
+        charge.clip = ChargeClip();
+        charge.pitch = MegaphoneChargeSound.PlaybackPitch(charge.clip.length, chargeSeconds);
         Tick(0);
-        transient.PlayOneShot(Clip(0));
-        loop.Play();
+        charge.Play();
     }
 
     public void Tick(float energy)
@@ -43,15 +56,14 @@ internal sealed class MegaphoneAudio : IDisposable
         float distance = PlayerControl.LocalPlayer == null ? 100f : Vector2.Distance(PlayerControl.LocalPlayer.GetTruePosition(), new Vector2(x, y));
         float volume = Constants.ShouldPlaySfx() ? gain * Mathf.Clamp01(1f - Mathf.Max(0f, distance - 2f) / 18f) * DataManager.Settings.Audio.SfxVolume : 0f;
         transient.volume = volume;
-        loop.volume = volume * (firing ? .3f : .24f + .16f * energy);
-        loop.pitch = firing ? .85f + .25f * energy : .7f + .65f * energy;
+        charge.volume = volume;
     }
 
     public void Fire(float energy)
     {
         if (firing) return;
         firing = true;
-        loop.Stop();
+        charge.Stop();
         transient.Stop();
         Tick(energy);
         transient.PlayOneShot(Clip(2));
@@ -59,7 +71,7 @@ internal sealed class MegaphoneAudio : IDisposable
 
     public void Dispose()
     {
-        loop.Stop(); transient.Stop();
+        charge.Stop(); transient.Stop();
         UnityEngine.Object.Destroy(root);
     }
 }

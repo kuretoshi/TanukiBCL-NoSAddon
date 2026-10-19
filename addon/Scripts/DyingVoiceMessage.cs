@@ -46,7 +46,7 @@ public sealed class DyingVoiceMessage : DefinedAllocatableModifierTemplate, Defi
         bool RuntimeAssignable.CanBeAwareAssignment => awarenessReference.CanBeAwareAssignment;
         private bool recorded;
         private GameObject? marker;
-        private TMPro.TextMeshPro? recordingNotice;
+        private DyingVoiceRecordingUI? recordingUI;
         private Vector2 location;
         private long started;
         private float duration, range;
@@ -90,29 +90,10 @@ public sealed class DyingVoiceMessage : DefinedAllocatableModifierTemplate, Defi
             }
             Publish();
             bool ready = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - started >= duration * 1000;
-            if (AmOwner && !ready && recordingNotice == null)
-            {
-                var hud = HudManager.Instance;
-                var template = hud?.KillButton?.cooldownTimerText;
-                if (hud != null && template != null)
-                {
-                    recordingNotice = UnityEngine.Object.Instantiate(template, hud.transform);
-                    recordingNotice.name = "TanukiDyingVoiceRecording";
-                    recordingNotice.transform.localScale = Vector3.one;
-                    recordingNotice.gameObject.SetAsUIAspectContent(AspectPosition.EdgeAlignments.Top,
-                        new Vector3(0, 1.1f, -30));
-                    recordingNotice.fontSize = 1.7f;
-                    recordingNotice.alignment = TMPro.TextAlignmentOptions.Center;
-                    recordingNotice.rectTransform.sizeDelta = new Vector2(8f, .6f);
-                }
-            }
-            if (recordingNotice != null)
-            {
-                recordingNotice.gameObject.SetActive(!ready && MeetingHud.Instance == null);
-                recordingNotice.text = string.Format(NebulaAPI.Language.Translate("role.tanukiDyingVoice.recording"),
-                    Math.Ceiling(Math.Max(0, duration - (DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - started) / 1000d)));
-            }
-            if (!ShowIcon)
+            UpdateRecordingUI(ready);
+            // Visibility follows the viewer, not the dead message owner.
+            bool ghostViewer = PlayerControl.LocalPlayer?.Data?.IsDead == true;
+            if (!ShowIcon && !ghostViewer)
             {
                 if (marker != null) marker.SetActive(false);
                 return;
@@ -128,12 +109,26 @@ public sealed class DyingVoiceMessage : DefinedAllocatableModifierTemplate, Defi
             marker.SetActive(ready && MeetingHud.Instance == null && ExileController.Instance == null);
         }
 
+        private void UpdateRecordingUI(bool ready)
+        {
+            if (!AmOwner) return;
+            if (ready)
+            {
+                recordingUI?.Dispose();
+                recordingUI = null;
+                return;
+            }
+            recordingUI ??= DyingVoiceRecordingUI.Create();
+            float elapsed = (DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - started) / 1000f;
+            recordingUI?.Update(elapsed, duration, MeetingHud.Instance == null && ExileController.Instance == null);
+        }
+
         private void Clear()
         {
             DyingVoiceBroadcast.Remove(MyPlayer.PlayerId);
             if (marker != null) UnityEngine.Object.Destroy(marker);
-            if (recordingNotice != null) UnityEngine.Object.Destroy(recordingNotice.gameObject);
-            recordingNotice = null;
+            recordingUI?.Dispose();
+            recordingUI = null;
             marker = null;
         }
         private void OnGameEnd(GameEndEvent ev) { Clear(); recorded = false; }

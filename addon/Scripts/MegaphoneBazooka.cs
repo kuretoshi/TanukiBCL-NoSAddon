@@ -120,7 +120,7 @@ public sealed class MegaphoneBazooka : DefinedSingleAbilityRoleTemplate<Megaphon
                     charge.Reset();
                     elapsed = 0;
                     visual = new MegaphoneVisual();
-                    if (SoundEnabled) audio = new MegaphoneAudio(x, y, SoundVolume);
+                    if (SoundEnabled) audio = new MegaphoneAudio(x, y, SoundVolume, ChargeTime);
                     if (AmOwner) { button?.SetLabel("tanukiMegaphone.charge"); button?.StartEffect(); }
                     // This API broadcasts its own RPC: only the shooter sends the lock.
                     if (AmOwner)

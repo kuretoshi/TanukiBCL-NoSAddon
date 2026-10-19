@@ -1,4 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup><Compile Include="../addon/Scripts/InterviewerPlaybackLimit.cs" Link="InterviewerPlaybackLimit.cs" /></ItemGroup>
   <PropertyGroup><OutputType>Exe</OutputType><TargetFramework>net8.0</TargetFramework><ImplicitUsings>enable</ImplicitUsings><Nullable>enable</Nullable></PropertyGroup>
   <ItemGroup><Compile Include="../addon/Scripts/LoudnessGate.cs" Link="LoudnessGate.cs" /><Compile Include="../addon/Scripts/VoiceBridge.cs" Link="VoiceBridge.cs" /></ItemGroup>
   <ItemGroup><Compile Include="../addon/Scripts/MegaphoneCharge.cs" Link="MegaphoneCharge.cs" /></ItemGroup>
@@ -9,4 +10,4 @@
   <ItemGroup><Compile Include="../addon/Scripts/SharedVoiceBridge.cs" Link="SharedVoiceBridge.cs" /></ItemGroup>
   <ItemGroup><Compile Include="../addon/Scripts/MegaphoneBattery.cs" Link="MegaphoneBattery.cs" /></ItemGroup>
 <ItemGroup><Compile Include="../addon/Scripts/DirectVoiceServer.cs" Link="DirectVoiceServer.cs" /></ItemGroup>
-<ItemGroup><Compile Include="../addon/Scripts/HostVoiceFeed.cs" Link="HostVoiceFeed.cs" /></ItemGroup><ItemGroup><Compile Include="../addon/Scripts/VoiceVersionRequirement.cs" Link="VoiceVersionRequirement.cs" /></ItemGroup></Project>
+<ItemGroup><Compile Include="../addon/Scripts/HostVoiceFeed.cs" Link="HostVoiceFeed.cs" /></ItemGroup><ItemGroup><Compile Include="../addon/Scripts/VoiceVersionRequirement.cs" Link="VoiceVersionRequirement.cs" /></ItemGroup><ItemGroup><Compile Include="../addon/Scripts/MegaphoneChargeSound.cs" Link="MegaphoneChargeSound.cs" /></ItemGroup><ItemGroup><Compile Include="../addon/Scripts/InterviewerBroadcast.cs" Link="InterviewerBroadcast.cs" /></ItemGroup><ItemGroup><Compile Include="../addon/Scripts/InterviewerTiming.cs" Link="InterviewerTiming.cs" /></ItemGroup></Project>
