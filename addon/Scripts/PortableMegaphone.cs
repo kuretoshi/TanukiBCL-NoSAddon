@@ -1,6 +1,7 @@
 using System;
 using Nebula.Modules;
 using Nebula.Roles.Crewmate;
+using Nebula.Utilities;
 using Virial;
 using Virial.Assignable;
 using Virial.Attributes;
@@ -21,11 +22,14 @@ public sealed class PortableMegaphone : DefinedSingleAbilityRoleTemplate<Portabl
     private static readonly FloatConfiguration ExtraRange = NebulaAPI.Configurations.Configuration("options.role.tanukiPortableMegaphone.extraRange", (0f, 30f, .5f), 5f);
     private static readonly FloatConfiguration CapacitySeconds = NebulaAPI.Configurations.Configuration("options.role.tanukiPortableMegaphone.capacity", (5f, 180f, 5f), 60f, FloatConfigurationDecorator.Second);
     private static readonly FloatConfiguration TaskRecharge = NebulaAPI.Configurations.Configuration("options.role.tanukiPortableMegaphone.recharge", (0f, 100f, 5f), 10f, value => value.ToString("0") + "%");
+    private static readonly BoolConfiguration DisableInComms = NebulaAPI.Configurations.Configuration(
+        "options.role.tanukiPortableMegaphone.disableInComms", false);
     public static readonly PortableMegaphone MyRole = new();
     private PortableMegaphone() : base("tanukiPortableMegaphone", new Virial.Color(85, 215, 170), RoleCategory.CrewmateRole, Crewmate.MyTeam,
-        new IConfiguration[] { ExtraRange, CapacitySeconds, TaskRecharge })
+        new IConfiguration[] { ExtraRange, CapacitySeconds, TaskRecharge, DisableInComms })
     {
         ConfigurationHolder!.Illustration = MegaphoneVisual.PortableIcon;
+        ConfigurationHolder.AddTags(AddonRoleTag.Tag);
     }
     Virial.Media.Image? DefinedAssignable.IconImage => MegaphoneVisual.PortableIcon;
     public override Ability CreateAbility(Player player, int[] arguments) => new(player, arguments);
@@ -51,18 +55,22 @@ public sealed class PortableMegaphone : DefinedSingleAbilityRoleTemplate<Portabl
             if (!AmOwner) return;
             button = NebulaAPI.Modules.AbilityButton(this, player, VirtualKeyInput.FixedAbility, 0f,
                 "tanukiPortableMegaphone.on", MegaphoneVisual.PortableIcon,
-                _ => Eligible && (battery.Active || (player.CanMove && battery.Charge > 0)),
+                _ => Available && (battery.Active || (player.CanMove && battery.Charge > 0)),
                 _ => !player.IsDead);
             button.ShowUsesIcon(0, "100%");
             button.EffectTimer = new VoiceEnergyTimer(() => (float)battery.Charge, () => battery.Active);
             button.OnClick = _ => {
-                if (battery.Toggle(Eligible && player.CanMove)) Synchronize();
+                if (battery.Toggle(Available && player.CanMove)) Synchronize();
             };
             UpdateButton();
         }
 
         private bool Eligible => !MyPlayer.IsDead && !MyPlayer.IsDisconnected && MeetingHud.Instance == null && ExileController.Instance == null
             && AmongUsClient.Instance != null && AmongUsClient.Instance.GameState == InnerNet.InnerNetClient.GameStates.Started;
+        // NoS includes personal/fake communication sabotages in this local check.
+        // Only the owning client decides whether to stop and broadcasts the result.
+        private bool CommsBlocked => DisableInComms && AmongUsUtil.InCommSab;
+        private bool Available => Eligible && !CommsBlocked;
 
         private void Synchronize() => StateRpc.Invoke((MyPlayer, ++nextSequence, battery.Active));
 
@@ -80,7 +88,7 @@ public sealed class PortableMegaphone : DefinedSingleAbilityRoleTemplate<Portabl
 
         private void UpdateButton()
         {
-            button?.SetLabel(battery.Active ? "tanukiPortableMegaphone.off" : battery.Charge <= 0 ? "tanukiPortableMegaphone.empty" : "tanukiPortableMegaphone.on");
+            button?.SetLabel(CommsBlocked ? "tanukiPortableMegaphone.comms" : battery.Active ? "tanukiPortableMegaphone.off" : battery.Charge <= 0 ? "tanukiPortableMegaphone.empty" : "tanukiPortableMegaphone.on");
             button?.UpdateUsesIcon("<size=75%><nobr>" + Math.Ceiling(battery.Charge * 100).ToString("0") + "%</nobr></size>");
         }
 
@@ -88,7 +96,7 @@ public sealed class PortableMegaphone : DefinedSingleAbilityRoleTemplate<Portabl
         {
             if (AmOwner) {
                 bool before = battery.Active;
-                battery.Update(Time.deltaTime, CapacitySeconds, Eligible);
+                battery.Update(Time.deltaTime, CapacitySeconds, Available);
                 if (before != battery.Active) Synchronize();
                 UpdateButton();
             }

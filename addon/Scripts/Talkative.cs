@@ -27,6 +27,7 @@ public sealed class Talkative : DefinedAllocatableModifierTemplate, DefinedAlloc
         new IConfiguration[] { Duration, Threshold, DuringMeeting })
     {
         ConfigurationHolder!.Illustration = VoiceRoleIcons.Talkative;
+        ConfigurationHolder.AddTags(AddonRoleTag.Tag);
         ConfigurationHolder.AppendConfiguration(MicrophoneTest.Option(() => Threshold));
     }
     Virial.Media.Image? DefinedAssignable.IconImage => VoiceRoleIcons.Talkative;

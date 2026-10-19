@@ -45,6 +45,7 @@ public sealed class MegaphoneBazooka : DefinedSingleAbilityRoleTemplate<Megaphon
         new IConfiguration[] { AimMode, Cooldown, ChargeTime, MinWidth, MaxWidth, Capacity, QuietDb, LoudDb, FriendlyFire, NormalKill, VoiceEffect, SoundEnabled, SoundVolume })
     {
         ConfigurationHolder!.Illustration = MegaphoneVisual.Icon;
+        ConfigurationHolder.AddTags(AddonRoleTag.Tag);
         ConfigurationHolder.AppendConfiguration(MicrophoneTest.Option(() => QuietDb, () => LoudDb));
     }
 

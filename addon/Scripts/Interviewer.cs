@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using Nebula.Modules;
 using Nebula.Roles.Crewmate;
+using Nebula.Utilities;
 using Virial;
 using Virial.Assignable;
 using Virial.Attributes;
@@ -27,9 +28,15 @@ public sealed class Interviewer : DefinedSingleAbilityRoleTemplate<Interviewer.A
     private static readonly IntegerConfiguration PlaybackLimit = NebulaAPI.Configurations.Configuration(
         "options.role.tanukiInterviewer.playbackLimit", (0, 10), 0, null,
         count => count == 0 ? NebulaAPI.Language.Translate("options.noLimit") : count.ToString());
+    private static readonly BoolConfiguration DisableInComms = NebulaAPI.Configurations.Configuration(
+        "options.role.tanukiInterviewer.disableInComms", false);
     public static readonly Interviewer MyRole = new();
     private Interviewer() : base("tanukiInterviewer", new Virial.Color(80, 190, 225), RoleCategory.CrewmateRole, Crewmate.MyTeam,
-        new IConfiguration[] { Seconds, Cooldown, PlaybackLimit }) { ConfigurationHolder!.Illustration = DyingVoiceVisual.Icon; }
+        new IConfiguration[] { Seconds, Cooldown, PlaybackLimit, DisableInComms })
+    {
+        ConfigurationHolder!.Illustration = DyingVoiceVisual.Icon;
+        ConfigurationHolder.AddTags(AddonRoleTag.Tag);
+    }
     Virial.Media.Image? DefinedAssignable.IconImage => DyingVoiceVisual.Icon;
     bool IAssignableDocument.HasTips => true;
     public override Ability CreateAbility(Player player, int[] arguments) => new(player);
@@ -59,6 +66,7 @@ public sealed class Interviewer : DefinedSingleAbilityRoleTemplate<Interviewer.A
         private bool Recording => InterviewerTiming.IsRecording(state.started, state.stopped, state.seconds, Now);
         private bool Ready => state.started > 0 && state.stopped > state.started;
         private bool Playing => state.playStarted > 0 && Now < state.playStarted + state.stopped - state.started;
+        private bool CommsBlocked => DisableInComms && AmongUsUtil.InCommSab;
         private bool Eligible => !MyPlayer.IsDead && !MyPlayer.IsDisconnected && MeetingHud.Instance == null &&
             ExileController.Instance == null && AmongUsClient.Instance != null &&
             AmongUsClient.Instance.GameState == InnerNet.InnerNetClient.GameStates.Started;
@@ -68,7 +76,7 @@ public sealed class Interviewer : DefinedSingleAbilityRoleTemplate<Interviewer.A
             state = new InterviewState { playerId = player.PlayerId };
             if (!AmOwner) return;
             button = NebulaAPI.Modules.AbilityButton(this, player, VirtualKeyInput.FixedAbility, (float)Cooldown,
-                "tanukiInterviewer.record", DyingVoiceVisual.Icon, _ => Eligible && player.CanMove && !Recording,
+                "tanukiInterviewer.record", DyingVoiceVisual.Icon, _ => Eligible && !CommsBlocked && player.CanMove && !Recording,
                 _ => !player.IsDead);
             button.EffectTimer = new VoiceEnergyTimer(() => (float)Math.Max(0, 1 - (Now - state.started) / Math.Max(1, state.seconds * 1000d)), () => Recording);
             button.OnClick = _ => StartRecording();
@@ -76,7 +84,7 @@ public sealed class Interviewer : DefinedSingleAbilityRoleTemplate<Interviewer.A
         }
         private void StartRecording()
         {
-            if (!Eligible || Recording || !MyPlayer.CanMove) return;
+            if (!Eligible || CommsBlocked || Recording || !MyPlayer.CanMove) return;
             CaptureRpc.Invoke((MyPlayer, ++nextSequence, (ulong)Now, Seconds, VisiblePlayers()));
         }
         internal void Capture(int id, long started, float seconds, byte[] visible)
@@ -137,8 +145,9 @@ public sealed class Interviewer : DefinedSingleAbilityRoleTemplate<Interviewer.A
         }
         private void UpdateOwner()
         {
+            if (!Recording) button?.SetLabel(CommsBlocked ? "tanukiInterviewer.comms" : "tanukiInterviewer.record");
             if (state.started == 0 || state.stopped != 0) return;
-            if (!Eligible || !Recording) { StopRpc.Invoke((MyPlayer, sequence, (ulong)Now)); return; }
+            if (!Eligible || CommsBlocked || !Recording) { StopRpc.Invoke((MyPlayer, sequence, (ulong)Now)); return; }
             if (Time.time < nextVisibility) return;
             nextVisibility = Time.time + .1f;
             var visible = VisiblePlayers();

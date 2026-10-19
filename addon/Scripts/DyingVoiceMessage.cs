@@ -27,6 +27,7 @@ public sealed class DyingVoiceMessage : DefinedAllocatableModifierTemplate, Defi
         new IConfiguration[] { Seconds, Range, ShowIcon, LoopPlayback })
     {
         ConfigurationHolder!.Illustration = DyingVoiceVisual.Icon;
+        ConfigurationHolder.AddTags(AddonRoleTag.Tag);
     }
     Virial.Media.Image? DefinedAssignable.IconImage => DyingVoiceVisual.Icon;
     bool IAssignableDocument.HasTips => true;

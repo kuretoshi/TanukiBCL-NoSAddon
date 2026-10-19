@@ -25,6 +25,7 @@ public sealed class Bibiri : DefinedAllocatableModifierTemplate, DefinedAllocata
         new IConfiguration[] { Threshold, DuringMeeting })
     {
         ConfigurationHolder!.Illustration = VoiceRoleIcons.Bibiri;
+        ConfigurationHolder.AddTags(AddonRoleTag.Tag);
         ConfigurationHolder.AppendConfiguration(MicrophoneTest.Option(() => Threshold));
     }
     Virial.Media.Image? DefinedAssignable.IconImage => VoiceRoleIcons.Bibiri;
