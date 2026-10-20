@@ -134,25 +134,20 @@ public static class DiscordContactButton
         var obj = new GameObject("TanukiAddonTitle");
         obj.layer = menu.gameObject.layer;
         obj.transform.SetParent(menu.transform, false);
-        var name = new GameObject("Name");
-        name.layer = obj.layer;
-        name.transform.SetParent(obj.transform, false);
-        name.transform.localPosition = new Vector3(0, .17f, 0);
-        var title = name.AddComponent<TextMeshPro>();
-        title.font = TMP_Settings.defaultFontAsset;
-        title.text = "<b>タヌキ丼</b>";
-        title.fontSize = 2.4f;
-        title.alignment = TextAlignmentOptions.Center;
-        title.enableWordWrapping = false;
-        title.rectTransform.sizeDelta = new Vector2(2.1f, .8f);
-        obj.SetAsUIAspectContent(AspectPosition.EdgeAlignments.RightTop, new Vector3(1f, 2.6f, -6f));
+        var logoObject = new GameObject("Logo");
+        logoObject.layer = obj.layer;
+        logoObject.transform.SetParent(obj.transform, false);
+        var logo = logoObject.AddComponent<SpriteRenderer>();
+        logo.sprite = AddonTitleLogo.GetSprite();
+        float topOffset = NebulaAddon.GetAddon("UchuAddon") == null ? 1.5f : 2.6f;
+        obj.SetAsUIAspectContent(AspectPosition.EdgeAlignments.RightTop, new Vector3(.975f, topOffset, -6f));
         obj.GetComponent<AspectPosition>().updateAlways = true;
         var versionObject = new GameObject("Version");
         versionObject.layer = obj.layer;
         versionObject.transform.SetParent(obj.transform, false);
-        versionObject.transform.localPosition = new Vector3(0, -.17f, 0);
+        versionObject.transform.localPosition = new Vector3(0, -logo.sprite.bounds.extents.y + .03f, -.1f);
         var version = versionObject.AddComponent<TextMeshPro>();
-        version.font = title.font;
+        version.font = TMP_Settings.defaultFontAsset;
         version.fontStyle = FontStyles.Bold;
         version.fontSize = 2f;
         version.text = "v" + (NebulaAddon.GetAddon("tanuki.bcl.roles")?.Version ?? "");
@@ -187,5 +182,6 @@ public static class DiscordContactButton
             Math.Max(.001f, Math.Abs(version.transform.lossyScale.y));
         version.characterSpacing = nearest.characterSpacing;
         version.color = nearest.color;
+        AddonTitleLogo.KeepBelowVersion(version.transform.parent, nearest);
     }
 }
