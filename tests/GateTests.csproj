@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup><Compile Include="../addon/Scripts/InterviewerPlaybackLimit.cs" Link="InterviewerPlaybackLimit.cs" /></ItemGroup>
   <PropertyGroup><OutputType>Exe</OutputType><TargetFramework>net8.0</TargetFramework><ImplicitUsings>enable</ImplicitUsings><Nullable>enable</Nullable></PropertyGroup>
+  <ItemGroup><Compile Include="../addon/Scripts/VoiceJammingRound.cs" Link="VoiceJammingRound.cs" /><Compile Include="../addon/Scripts/VoiceJammingBroadcast.cs" Link="VoiceJammingBroadcast.cs" /></ItemGroup>
   <ItemGroup><Compile Include="../addon/Scripts/LoudnessGate.cs" Link="LoudnessGate.cs" /><Compile Include="../addon/Scripts/VoiceBridge.cs" Link="VoiceBridge.cs" /></ItemGroup>
   <ItemGroup><Compile Include="../addon/Scripts/MegaphoneCharge.cs" Link="MegaphoneCharge.cs" /></ItemGroup>
   <ItemGroup><Compile Include="../addon/Scripts/SilenceCountdown.cs" Link="SilenceCountdown.cs" /></ItemGroup>
