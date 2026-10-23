@@ -19,7 +19,7 @@ internal sealed class InterviewerMeetingButton : IDisposable
         root.transform.SetParent(parent, false);
         root.transform.localPosition = new Vector3(-3.35f, 2.4f, -30);
         image = root.AddComponent<SpriteRenderer>();
-        image.sprite = DyingVoiceVisual.GetSprite();
+        image.sprite = InterviewerVisual.GetSprite();
         image.transform.localScale = Vector3.one * .45f;
         var collider = root.AddComponent<BoxCollider2D>();
         collider.size = new Vector2(1.8f, 1.6f);

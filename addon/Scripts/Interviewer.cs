@@ -34,10 +34,10 @@ public sealed class Interviewer : DefinedSingleAbilityRoleTemplate<Interviewer.A
     private Interviewer() : base("tanukiInterviewer", new Virial.Color(80, 190, 225), RoleCategory.CrewmateRole, Crewmate.MyTeam,
         new IConfiguration[] { Seconds, Cooldown, PlaybackLimit, DisableInComms })
     {
-        ConfigurationHolder!.Illustration = DyingVoiceVisual.Icon;
+        ConfigurationHolder!.Illustration = InterviewerVisual.Icon;
         ConfigurationHolder.AddTags(AddonRoleTag.Tag);
     }
-    Virial.Media.Image? DefinedAssignable.IconImage => DyingVoiceVisual.Icon;
+    Virial.Media.Image? DefinedAssignable.IconImage => InterviewerVisual.Icon;
     bool IAssignableDocument.HasTips => true;
     public override Ability CreateAbility(Player player, int[] arguments) => new(player);
     AbilityAssignmentStatus DefinedRole.AssignmentStatus => AbilityAssignmentStatus.CanLoadToMadmate;
@@ -76,7 +76,7 @@ public sealed class Interviewer : DefinedSingleAbilityRoleTemplate<Interviewer.A
             state = new InterviewState { playerId = player.PlayerId };
             if (!AmOwner) return;
             button = NebulaAPI.Modules.AbilityButton(this, player, VirtualKeyInput.FixedAbility, (float)Cooldown,
-                "tanukiInterviewer.record", DyingVoiceVisual.Icon, _ => Eligible && !CommsBlocked && player.CanMove && !Recording,
+                "tanukiInterviewer.record", InterviewerVisual.Icon, _ => Eligible && !CommsBlocked && player.CanMove && !Recording,
                 _ => !player.IsDead);
             button.EffectTimer = new VoiceEnergyTimer(() => (float)Math.Max(0, 1 - (Now - state.started) / Math.Max(1, state.seconds * 1000d)), () => Recording);
             button.OnClick = _ => StartRecording();
