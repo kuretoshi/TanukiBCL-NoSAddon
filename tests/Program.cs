@@ -4,6 +4,8 @@ if (args.Length == 1 && args[0] == "--direct-test-server") { await DirectVoiceTe
 
 static void Check(bool ok, string name) { if (!ok) throw new Exception(name); }
 VoiceJammingTests.Run(Check);
+HeroTransformTests.Run(Check);
+NGWordTests.Run(Check);
 static bool Sample(LoudnessGate gate, long seq, double time, double rms = .5, bool active = true)
     => gate.Sample(seq, rms, active, time, -12, .5);
 
@@ -303,10 +305,10 @@ using (var hostReader = new SharedVoiceBridge(251, Path.Combine(Path.GetTempPath
 Console.WriteLine("PASS host relay validation and role bridge");
 
 Check(!VoiceVersionRequirement.IsSupported(null), "missing client version needs update notice");
-Check(!VoiceVersionRequirement.IsSupported("3.2.37"), "old client version needs update notice");
-Check(VoiceVersionRequirement.IsSupported("3.2.38"), "minimum client version accepted");
-Check(VoiceVersionRequirement.IsSupported("3.2.39"), "newer client version accepted");
-Check(VoiceVersionRequirement.IsSupported("3.2.38-net-beta.1"), "NET equivalent version accepted");
+Check(!VoiceVersionRequirement.IsSupported("3.2.46"), "old client version needs update notice");
+Check(VoiceVersionRequirement.IsSupported("3.2.47"), "minimum client version accepted");
+Check(VoiceVersionRequirement.IsSupported("3.2.48"), "newer client version accepted");
+Check(VoiceVersionRequirement.IsSupported("3.2.47-net-beta.1"), "NET equivalent version accepted");
 Check(!VoiceVersionRequirement.IsSupported("3.2.35garbage"), "malformed client version rejected");
 
 var versionDir = Path.Combine(Path.GetTempPath(), "tanuki-version-" + Guid.NewGuid().ToString("N"));

@@ -1,0 +1,33 @@
+{
+    "namePlates": [
+        {
+            "Name" : "NamePlate",
+            "Plate": {
+                "Address": "FileName.png"
+            }
+        }
+    ],
+    "hats": [
+        {
+            "Name" : "Hat",
+            "Bounce": "false",
+            "Adaptive": "false",
+            "Behind": "false",
+            "Main": {
+                "Address": "FileName.png"
+            },
+            "Climb": {
+                "Address": "FileName.png"
+            }
+        }
+    ],
+    "visors": [
+        {
+            "Name" : "Visor",
+            "Adaptive": "false",
+            "Main": {
+                "Address": "Beard.png"
+            }
+        }
+    ]
+}

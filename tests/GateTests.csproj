@@ -1,4 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup><Compile Include="../addon/Scripts/NGWordList.cs" Link="NGWordList.cs" /></ItemGroup>
+  <ItemGroup><Compile Include="../addon/Scripts/HeroTransformBroadcast.cs" Link="HeroTransformBroadcast.cs" /></ItemGroup>
+  <ItemGroup><Compile Include="../addon/Scripts/HeroTransformState.cs" Link="HeroTransformState.cs" /></ItemGroup>
   <ItemGroup><Compile Include="../addon/Scripts/InterviewerPlaybackLimit.cs" Link="InterviewerPlaybackLimit.cs" /></ItemGroup>
   <PropertyGroup><OutputType>Exe</OutputType><TargetFramework>net8.0</TargetFramework><ImplicitUsings>enable</ImplicitUsings><Nullable>enable</Nullable></PropertyGroup>
   <ItemGroup><Compile Include="../addon/Scripts/VoiceJammingRound.cs" Link="VoiceJammingRound.cs" /><Compile Include="../addon/Scripts/VoiceJammingBroadcast.cs" Link="VoiceJammingBroadcast.cs" /></ItemGroup>

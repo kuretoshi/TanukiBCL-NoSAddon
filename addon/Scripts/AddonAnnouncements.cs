@@ -24,6 +24,8 @@ public static class AddonAnnouncements
     private const string TitleLogoId = "TanukiBCLNoSAddon.TitleLogo";
     private const int VoiceJammingerNumber = 267102002;
     private const string VoiceJammingerId = "TanukiBCLNoSAddon.VoiceJamminger";
+    private const int HeroesNGNumber = 267102401;
+    private const string HeroesNGId = "TanukiBCLNoSAddon.HeroesNG";
 
     public static void Preprocess(NebulaPreprocessor preprocessor)
     {
@@ -41,6 +43,7 @@ public static class AddonAnnouncements
             if (item.Number == InterviewerNumber && item.Id == InterviewerId) continue;
             if (item.Number == TitleLogoNumber && item.Id == TitleLogoId) continue;
             if (item.Number == VoiceJammingerNumber && item.Id == VoiceJammingerId) continue;
+            if (item.Number == HeroesNGNumber && item.Id == HeroesNGId) continue;
             news.Add(item);
         }
         news.Add(new Announcement {
@@ -82,6 +85,16 @@ public static class AddonAnnouncements
             Text = Virial.NebulaAPI.Language.Translate("tanuki.news.voiceJamminger.body"),
             Language = (uint)DataManager.Settings.Language.CurrentLanguage,
             Date = "2026-10-20T00:00:01Z"
+        });
+        news.Add(new Announcement {
+            Number = HeroesNGNumber,
+            Id = HeroesNGId,
+            Title = Virial.NebulaAPI.Language.Translate("tanuki.news.heroesNG.title"),
+            ShortTitle = Virial.NebulaAPI.Language.Translate("tanuki.news.heroesNG.shortTitle"),
+            SubTitle = Virial.NebulaAPI.Language.Translate("tanuki.news.heroesNG.subtitle"),
+            Text = Virial.NebulaAPI.Language.Translate("tanuki.news.heroesNG.body"),
+            Language = (uint)DataManager.Settings.Language.CurrentLanguage,
+            Date = "2026-10-24T00:00:00Z"
         });
         news.Sort((left, right) => string.Compare(right.Date, left.Date, StringComparison.Ordinal));
         announcements = news.ToArray();

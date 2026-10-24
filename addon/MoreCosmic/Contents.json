@@ -1,0 +1,57 @@
+{
+  "BundleName": "TanukiHeroCostumesV2",
+  "Hats": [
+    {
+      "Name": "SuperHero",
+      "Author": "TanukiBCL",
+      "Package": "TanukiHeroes",
+      "IsHidden": true,
+      "Adaptive": false,
+      "Bounce": false,
+      "HideHands": true,
+      "FPS": 1,
+      "Main": {
+        "Address": "tWg4uMeMb/HOb85tfub/Main.png"
+      },
+      "Climb": {
+        "Address": "tWg4uMeMb/HOb85tfub/Climb.png"
+      },
+      "ClimbDown": {
+        "Address": "tWg4uMeMb/HOb85tfub/ClimbDown.png"
+      },
+      "Move": {
+        "Address": "tWg4uMeMb/HOb85tfub/Move.png",
+        "Length": 8,
+        "AnimSync": 1
+      }
+    },
+    {
+      "Name": "EvilHero",
+      "Author": "TanukiBCL",
+      "Package": "TanukiHeroes",
+      "IsHidden": true,
+      "Adaptive": false,
+      "Bounce": false,
+      "HideHands": true,
+      "FPS": 1,
+      "Main": {
+        "Address": "tWg4uMeMb/0Wg0o9Ic/Main.png"
+      },
+      "Climb": {
+        "Address": "tWg4uMeMb/0Wg0o9Ic/Climb.png"
+      },
+      "ClimbDown": {
+        "Address": "tWg4uMeMb/0Wg0o9Ic/ClimbDown.png"
+      },
+      "Move": {
+        "Address": "tWg4uMeMb/0Wg0o9Ic/Move.png",
+        "Length": 8,
+        "AnimSync": 1
+      }
+    }
+  ],
+  "Visors": [],
+  "Nameplates": [],
+  "Stamps": [],
+  "Packages": []
+}
