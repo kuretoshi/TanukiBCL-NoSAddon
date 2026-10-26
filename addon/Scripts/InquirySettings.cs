@@ -37,10 +37,13 @@ public static class InquirySettings
         var screen = MetaScreen.GenerateScreen(new Vector2(5.6f, .7f), tab, new Vector3(0f, -2.12f, -20f), false, false, false);
         screen.gameObject.name = "TanukiInquiryButton";
         var buttonAttribute = new TextAttribute(NebulaAPI.GUI.GetAttribute(AttributeAsset.OverlayBold))
-            { Size = new(2.5f, .27f), Alignment = Virial.Text.TextAlignment.Center, FontSize = new(1.8f, 1.4f, 1.8f) };
-        screen.SetWidget(NebulaAPI.GUI.RawButton(GUIAlignment.Center, buttonAttribute, T("open"), _ => Open(__instance.transform),
+            { Size = new(2.35f, .27f), Alignment = Virial.Text.TextAlignment.Center, FontSize = new(1.8f, 1.4f, 1.8f) };
+        screen.SetWidget(NebulaAPI.GUI.HorizontalHolder(GUIAlignment.Center,
+            NebulaAPI.GUI.RawButton(GUIAlignment.Center, buttonAttribute, T("open"), _ => Open(__instance.transform),
             onMouseOver: _ => NebulaManager.Instance.SetHelpWidget(null, NebulaAPI.GUI.RawText(GUIAlignment.Center, NebulaAPI.GUI.GetAttribute(AttributeAsset.OverlayContent), T("hint"))),
-            onMouseOut: _ => NebulaManager.Instance.SetHelpWidget(null, (GUIWidget?)null), margin: .16f), new Virial.Compat.Vector2(.5f, .5f), out _);
+            onMouseOut: _ => NebulaManager.Instance.SetHelpWidget(null, (GUIWidget?)null), margin: .16f),
+            NebulaAPI.GUI.LocalizedButton(GUIAlignment.Center, buttonAttribute, "tanuki.heroPhrase.personal", _ => HeroPhraseSettings.OpenMenu(), margin: .16f)),
+            new Virial.Compat.Vector2(.5f, .5f), out _);
         BindButtons(screen.gameObject);
     }
     private static void BindButtons(GameObject root)

@@ -39,6 +39,7 @@ public static class HeroSpeechHost
         try { NGWord.EnsureTemplate(); }
         catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException)
         { NebulaAPI.Logging.NebulaLogger("TanukiSpeech").Error(ex.Message); }
+        NGWordSubmission.Install();
         new Harmony("tanuki.bcl.roles.heroSpeech").Patch(AccessTools.Method(typeof(HudManager), nameof(HudManager.Update)),
             postfix: new HarmonyMethod(typeof(HeroSpeechHost), nameof(Update)));
     }
@@ -50,6 +51,7 @@ public static class HeroSpeechHost
         int stage = (game != null ? 1 : 0) | (game?.GameState == InnerNet.InnerNetClient.GameStates.Started ? 2 : 0) |
             (NebulaAPI.CurrentGame != null ? 4 : 0) | (HeroSpeechHost.IsPresent(IntroCutscene.Instance) ? 8 : 0) | (HeroSpeechHost.IsPresent(ExileController.Instance) ? 16 : 0);
         if (stage != lastStage) { lastStage = stage; NebulaAPI.Logging.NebulaLogger("TanukiSpeech").Message("Bridge stage=" + stage); }
+        NGWordSubmission.Tick();
         if (!active) { Close(); return; }
         try { NGWord.EnsureAllPlayersAssigned(); }
         catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException || ex is ArgumentException)

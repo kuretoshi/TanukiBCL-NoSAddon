@@ -1,0 +1,36 @@
+using TanukiBCL.Roles;
+static void Check(bool ok, string message) { if (!ok) throw new Exception(message); }
+for (int n = 2; n <= 24; n++)
+for (int seed = 0; seed < 100; seed++)
+{
+    var ids = Enumerable.Range(0, n).Select(i => (byte)i).ToArray();
+    var round = new NGWordSubmissionRound(ids);
+    Check(round.Allocate(new Random(seed)) == null, "Cannot allocate before confirmation");
+    foreach (byte id in ids) Check(round.Submit(id, "word" + id), "Submission accepted");
+    Check(!round.Submit(0, "changed"), "Confirmed word cannot change");
+    Check(!round.Submit(250, "intruder"), "Nonparticipant rejected");
+    var result = round.Allocate(new Random(seed))!;
+    Check(result.Count == n, "Every recipient assigned");
+    Check(result.Values.Select(e => e.Display).Distinct().Count() == n, "Every submitted entry used once");
+    Check(result.All(p => p.Value.Display != "word" + p.Key), "No self assignment");
+    foreach (int count in new[] { 1, n - 1, n, n + 5 })
+    {
+        var limited = round.Allocate(new Random(seed), count)!;
+        Check(limited.Count == Math.Min(n, count), "Requested count clamped to available participants");
+        Check(limited.All(p => p.Value.Display != "word" + p.Key), "Limited assignment excludes own submission");
+        Check(limited.Values.Select(e => e.Display).Distinct().Count() == limited.Count, "Limited assignment uses each word at most once");
+    }
+}
+var disconnected = new NGWordSubmissionRound(new byte[] { 0, 1, 2 });
+disconnected.Submit(0, "zero"); disconnected.Submit(1, "one");
+disconnected.Retain(new byte[] { 0, 1 });
+Check(disconnected.Allocate(new Random(1))!.Count == 2, "Unconfirmed disconnected player stops blocking");
+disconnected.Retain(new byte[] { 0 });
+Check(disconnected.Count == 1 && disconnected.Confirmed == 1 && disconnected.Allocate(new Random()) == null, "Cannot self assign alone");
+foreach (string invalid in new[] { "", "a", "#comment", "ab\ncd", "ab<cd", "ab|", new string('a',33) })
+    Check(!NGWordSubmissionRound.TryParse(invalid, out _), "Invalid input rejected: " + invalid);
+Check(NGWordSubmissionRound.TryParse("  漢字|かんじ  ", out var entry) && entry!.Display == "漢字" && entry.Words.Length == 2, "Reading retained");
+var duplicate = new NGWordSubmissionRound(new byte[] { 0, 1 });
+duplicate.Submit(0, "same"); duplicate.Submit(1, "same");
+Check(duplicate.Allocate(new Random(1))!.Count == 2, "Identical text from different authors allowed");
+Console.WriteLine("NG submission tests passed (2-24 players, 100 seeds each; validation and disconnects).");

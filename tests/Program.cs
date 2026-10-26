@@ -5,7 +5,9 @@ if (args.Length == 1 && args[0] == "--direct-test-server") { await DirectVoiceTe
 static void Check(bool ok, string name) { if (!ok) throw new Exception(name); }
 VoiceJammingTests.Run(Check);
 HeroTransformTests.Run(Check);
+HeroPhraseTests.Run(Check);
 NGWordTests.Run(Check);
+NGWordFileTests.Run(Check);
 static bool Sample(LoudnessGate gate, long seq, double time, double rms = .5, bool active = true)
     => gate.Sample(seq, rms, active, time, -12, .5);
 

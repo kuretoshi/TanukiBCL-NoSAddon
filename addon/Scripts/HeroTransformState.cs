@@ -41,4 +41,6 @@ public sealed class HeroTransformState
     public static bool BlocksKill(HeroKind defender, bool active, bool selfKill, HeroKind? killer) =>
         active && !selfKill && (!killer.HasValue || killer.Value == defender);
     public static bool Misfires(HeroKind kind, bool targetIsCrewmate) => kind == HeroKind.Super && targetIsCrewmate;
+    public static bool AllowsKill(HeroKind kind, bool transformed, bool killBeforeTransform) =>
+        transformed || kind == HeroKind.Evil && killBeforeTransform;
 }

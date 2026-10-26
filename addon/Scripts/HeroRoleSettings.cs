@@ -1,3 +1,4 @@
+using System.Linq;
 using Virial;
 using Virial.Configuration;
 
@@ -7,6 +8,7 @@ public sealed class HeroRoleSettings
 {
     public readonly FloatConfiguration Cooldown, Seconds, KillCooldown, WaitSeconds;
     public readonly BoolConfiguration HideName;
+    public readonly BoolConfiguration? KillBeforeTransform;
     public HeroRoleSettings(string role)
     {
         string key = "options.role." + role + ".";
@@ -15,6 +17,9 @@ public sealed class HeroRoleSettings
         KillCooldown = NebulaAPI.Configurations.Configuration(key + "killCooldown", (0f, 30f, 2.5f), 2.5f, FloatConfigurationDecorator.Second);
         WaitSeconds = NebulaAPI.Configurations.Configuration(key + "waitSeconds", (1f, 15f, 1f), 5f, FloatConfigurationDecorator.Second);
         HideName = NebulaAPI.Configurations.Configuration(key + "hideName", false);
+        if (role == "tanukiEvilHero") KillBeforeTransform = NebulaAPI.Configurations.Configuration(key + "killBeforeTransform", false);
     }
-    public IConfiguration[] All => new IConfiguration[] { Cooldown, Seconds, KillCooldown, WaitSeconds, HideName };
+    public bool CanKillBeforeTransform => KillBeforeTransform != null && KillBeforeTransform;
+    public IConfiguration[] All => new IConfiguration[] { Cooldown, Seconds, KillCooldown, WaitSeconds, HideName }
+        .Concat(KillBeforeTransform == null ? System.Array.Empty<IConfiguration>() : new IConfiguration[] { KillBeforeTransform }).ToArray();
 }

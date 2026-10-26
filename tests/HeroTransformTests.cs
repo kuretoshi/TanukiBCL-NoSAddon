@@ -39,6 +39,10 @@ public static class HeroTransformTests
         check(HeroTransformState.Misfires(HeroKind.Super, true), "Super Hero dies from targeting a crewmate");
         check(!HeroTransformState.Misfires(HeroKind.Super, false), "Super Hero can kill impostors and neutrals");
         check(!HeroTransformState.Misfires(HeroKind.Evil, true), "Evil Hero can kill crewmates without misfire");
+        check(!HeroTransformState.AllowsKill(HeroKind.Evil, false, false), "Evil Hero starts with no kill by default");
+        check(HeroTransformState.AllowsKill(HeroKind.Evil, false, true), "Evil Hero optional kill works before transformation");
+        check(!HeroTransformState.AllowsKill(HeroKind.Super, false, true), "Optional early kill cannot grant Super Hero a normal kill");
+        check(HeroTransformState.AllowsKill(HeroKind.Evil, true, false) && HeroTransformState.AllowsKill(HeroKind.Super, true, false), "Both heroes retain transformed kills when early kill is disabled");
         Console.WriteLine("PASS hero voice arming, exact duration, interruption, replay rejection, mutual exceptions and misfire rules");
     }
     private static void VerifyBroadcast(Action<bool, string> check)

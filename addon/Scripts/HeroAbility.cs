@@ -1,6 +1,7 @@
 using System;
 using System.Diagnostics;
 using Nebula.Modules;
+using Nebula.Modules.ScriptComponents;
 using Nebula.Utilities;
 using Virial;
 using Virial.Assignable;
@@ -19,12 +20,13 @@ public sealed class HeroAbility : AbstractPlayerAbility, IPlayerAbility
 {
     private static readonly RemoteProcess<(Player player, int sequence)> TransformRpc = new("TanukiHeroTransformV1",
         (message, _) => message.player.Role.GetAbility<HeroAbility>()?.Transform(message.sequence));
-    private static readonly RemoteProcess<(Player player, int sequence)> ArmRpc = new("TanukiHeroSpeechArmV1",
-        (message, _) => message.player.Role.GetAbility<HeroAbility>()?.BeginWait(message.sequence));
+    private static readonly RemoteProcess<(Player player, int sequence, string word, string reading)> ArmRpc = new("TanukiHeroSpeechArmV2",
+        (message, _) => message.player.Role.GetAbility<HeroAbility>()?.BeginWait(message.sequence, message.word, message.reading));
     private static int nextSequence;
     public static void EnsureRpcRegistered() { }
     private readonly HeroKind kind;
     private readonly HeroRoleSettings settings;
+    private string[] speechWords = new[] { "変身" };
     private readonly HeroTransformState state = new();
     private readonly Stopwatch clock = Stopwatch.StartNew();
     private HeroVisual? visual;
@@ -39,9 +41,10 @@ public sealed class HeroAbility : AbstractPlayerAbility, IPlayerAbility
     private bool Eligible => Alive && !HeroSpeechHost.IsPresent(MeetingHud.Instance) && !HeroSpeechHost.IsPresent(ExileController.Instance) &&
         AmongUsClient.Instance != null && AmongUsClient.Instance.GameState == InnerNet.InnerNetClient.GameStates.Started;
     private bool Transformed => state.Active && Eligible && state.Remaining(Now) > 0;
+    private bool CanUseKill => Eligible && HeroTransformState.AllowsKill(kind, Transformed, settings.CanKillBeforeTransform);
     public bool SpeechEligible => Eligible;
     public object SpeechJob => new { playerId = MyPlayer.PlayerId, kind = "hero", request = state.Waiting ? armedSequence : 0,
-        expires = state.Waiting ? speechExpiry : 0, words = Array.Empty<string>() };
+        expires = state.Waiting ? speechExpiry : 0, words = speechWords };
     bool IPlayerAbility.HideKillButton => true;
 
     public HeroAbility(Player player, HeroKind kind, HeroRoleSettings settings) : base(player)
@@ -62,17 +65,20 @@ public sealed class HeroAbility : AbstractPlayerAbility, IPlayerAbility
         killButton = NebulaAPI.Modules.KillButton(this, player, true, VirtualKeyInput.Kill, settings.KillCooldown,
             kind == HeroKind.Super ? "tanukiHero.justice" : "kill", ModAbilityButton.LabelType.Impostor, null, Kill,
             target => kind == HeroKind.Super || !target.IsImpostor,
-            _ => Transformed && player.CanMove, _ => Transformed);
+            _ => CanUseKill && player.CanMove, _ => CanUseKill);
     }
     private void Arm()
     {
         if (!Eligible || !MyPlayer.CanMove || !HeroSpeechHost.ReadyFor(MyPlayer.PlayerId) || state.Waiting || state.Active) return;
-        ArmRpc.Invoke((MyPlayer, ++nextSequence));
+        var words = HeroPhraseSettings.WordsFor(kind);
+        ArmRpc.Invoke((MyPlayer, ++nextSequence, words[0], words.Length > 1 ? words[1] : ""));
     }
-    private void BeginWait(int sequence)
+    private void BeginWait(int sequence, string word, string reading)
     {
         if (!Eligible || sequence <= armedSequence) return;
+        if (!HeroTransformPhrase.TryCreate(word, reading, out var words)) return;
         if (!state.Arm(Now, settings.WaitSeconds)) return;
+        speechWords = words;
         armedSequence = sequence;
         speechExpiry = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() + (long)(state.Duration * 1000);
         if (AmOwner)
@@ -109,7 +115,7 @@ public sealed class HeroAbility : AbstractPlayerAbility, IPlayerAbility
     }
     private void Kill(Player target, ModAbilityButton button)
     {
-        if (!Transformed || target.IsDead || target.IsDisconnected || target.PlayerId == MyPlayer.PlayerId) return;
+        if (!CanUseKill || target.IsDead || target.IsDisconnected || target.PlayerId == MyPlayer.PlayerId) return;
         if (kind == HeroKind.Evil && target.IsImpostor) return;
         if (HeroTransformState.Misfires(kind, target.Role.Role.Category == RoleCategory.CrewmateRole))
             MyPlayer.Suicide(PlayerStates.Misfired, null, KillParameter.NormalKill);
@@ -136,6 +142,8 @@ public sealed class HeroAbility : AbstractPlayerAbility, IPlayerAbility
         if (!AmOwner) return;
         transformButton?.SetLabel(state.Active ? "tanukiHero.active" : state.Waiting ? "tanukiHero.speak" :
             HeroSpeechHost.ReadyFor(MyPlayer.PlayerId) ? "tanukiHero.transform" : "tanukiHero.disconnected");
+        if (state.Waiting && transformButton is ModAbilityButtonImpl button)
+            button.SetRawLabel(NebulaAPI.Language.Translate("button.label.tanukiHero.speakWord").Replace("%WORD%", speechWords[0]));
     }
     private void LateUpdate(GameLateUpdateEvent ev) => visual?.LateUpdate();
     private void Finish(bool failed = false)

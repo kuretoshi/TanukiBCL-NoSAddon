@@ -1,7 +1,5 @@
 using System;
-using System.IO;
 using System.Linq;
-using System.Text;
 using Nebula.Modules;
 using Nebula.Utilities;
 using Virial;
@@ -18,12 +16,21 @@ public sealed class NGWord : DefinedAllocatableModifierTemplate, DefinedAllocata
 {
     private static readonly BoolConfiguration Enabled = NebulaAPI.Configurations.Configuration("options.role.tanukiNGWord.enabled", false);
     private static readonly BoolConfiguration Meetings = NebulaAPI.Configurations.Configuration("options.role.tanukiNGWord.meetings", true);
+    private static readonly BoolConfiguration HideOwnWord = NebulaAPI.Configurations.Configuration("options.role.tanukiNGWord.hideOwnWord", false);
+    private static readonly BoolConfiguration PlayerInput = NebulaAPI.Configurations.Configuration("options.role.tanukiNGWord.playerInput", false);
+    private static readonly IntegerConfiguration AssignCount = NebulaAPI.Configurations.Configuration(
+        "options.role.tanukiNGWord.assignCount", (0, 24), 0, null,
+        count => count == 0 ? NebulaAPI.Language.Translate("options.role.tanukiNGWord.everyone") : count.ToString());
+    public static int AssignmentCount => (int)AssignCount;
+    private static int TargetCount(int available) => AssignmentCount == 0 ? available : Math.Min(AssignmentCount, available);
+    public static bool UsesPlayerInput => Enabled && PlayerInput;
     public static readonly NGWord MyRole = new();
     private static object? assignedGame;
-    private NGWord() : base("tanukiNGWord", "TNG", new Virial.Color(245, 140, 70), new IConfiguration[] { Enabled, Meetings })
+    private NGWord() : base("tanukiNGWord", "TNG", new Virial.Color(245, 140, 70), new IConfiguration[] { Enabled, Meetings, HideOwnWord, PlayerInput, AssignCount })
     {
         ConfigurationHolder!.Illustration = VoiceRoleIcons.Talkative;
         ConfigurationHolder.AddTags(AddonRoleTag.Tag);
+        ConfigurationHolder.AppendConfiguration(NGWordSettings.Option());
         ConfigurationHolder.SetDisplayState(() => Enabled ? ConfigurationHolderState.Activated : ConfigurationHolderState.Inactivated);
         NebulaAPI.Logging.NebulaLogger("TanukiSpeech").Message("NG all-player option=" + (bool)Enabled + "; config=" + DataSaver.DataSaverFolderPath);
     }
@@ -32,10 +39,11 @@ public sealed class NGWord : DefinedAllocatableModifierTemplate, DefinedAllocata
     bool ISpawnable.IsSpawnable => Enabled;
     void HasAssignmentRoutine.TryAssign(IRoleTable table)
     {
-        if (!Enabled) return;
+        if (!Enabled || PlayerInput) return;
         var entries = LoadWords().OrderBy(_ => Guid.NewGuid()).ToArray();
         int index = 0;
-        foreach (var player in table.GetAllPlayers().OrderBy(_ => Guid.NewGuid()))
+        var roster = table.GetAllPlayers().ToArray();
+        foreach (var player in roster.OrderBy(_ => Guid.NewGuid()).Take(TargetCount(roster.Length)))
         {
             var word = entries[index++ % entries.Length];
             table.SetModifier(player.playerId, this, word.Encode(System.Random.Shared.Next(1, int.MaxValue)));
@@ -46,37 +54,21 @@ public sealed class NGWord : DefinedAllocatableModifierTemplate, DefinedAllocata
     public static void EnsureAllPlayersAssigned()
     {
         var game = NebulaAPI.CurrentGame;
-        if (!Enabled || game == null || !AmongUsClient.Instance.AmHost || ReferenceEquals(game, assignedGame)) return;
+        if (!Enabled || PlayerInput || game == null || !AmongUsClient.Instance.AmHost || ReferenceEquals(game, assignedGame)) return;
         if (PlayerControl.LocalPlayer == null || !PlayerControl.LocalPlayer.CanMove) return;
         var roster = game.GetAllPlayers().Where(p => !p.IsDisconnected && !p.IsDead).ToArray();
         if (roster.Length == 0) return;
         assignedGame = game;
-        var players = roster.Where(p => !p.TryGetModifier<Instance>(out _)).ToArray();
+        int existing = roster.Count(p => p.TryGetModifier<Instance>(out _));
+        var players = roster.Where(p => !p.TryGetModifier<Instance>(out _)).OrderBy(_ => Guid.NewGuid())
+            .Take(Math.Max(0, TargetCount(roster.Length) - existing)).ToArray();
         if (players.Length == 0) return;
         var entries = LoadWords().OrderBy(_ => Guid.NewGuid()).ToArray();
         for (int i = 0; i < players.Length; i++)
             players[i].AddModifier(MyRole, entries[i % entries.Length].Encode(System.Random.Shared.Next(1, int.MaxValue)));
     }
-    public static string EnsureTemplate()
-    {
-        string directory = Path.Combine(Environment.CurrentDirectory, "TanukiBCL");
-        string path = Path.Combine(directory, "NGWords.txt");
-        Directory.CreateDirectory(directory);
-        if (!File.Exists(path))
-        {
-            using var source = NebulaAPI.GetAddon("tanuki.bcl.roles")?.GetResource("NGWords.template.txt")?.AsStream()
-                ?? throw new IOException("NG word template is missing.");
-            using var destination = new FileStream(path, FileMode.CreateNew, FileAccess.Write);
-            source.CopyTo(destination);
-        }
-        return path;
-    }
-    private static NGWordEntry[] LoadWords()
-    {
-        string path = EnsureTemplate();
-        if (new FileInfo(path).Length > 131072) throw new IOException("NG word file exceeds 128 KiB.");
-        return NGWordList.Parse(File.ReadAllText(path, Encoding.UTF8));
-    }
+    public static string EnsureTemplate() => NGWordSettings.Files.EnsureDefault();
+    private static NGWordEntry[] LoadWords() => NGWordSettings.Files.Load();
     RuntimeModifier RuntimeAssignableGenerator<RuntimeModifier>.CreateInstance(Player player, int[] args) => new Instance(player, args);
     private static readonly RemoteProcess<(Player player, int request)> HitRpc = new("TanukiNGWordHitV1", (data, _) =>
     {
@@ -90,10 +82,11 @@ public sealed class NGWord : DefinedAllocatableModifierTemplate, DefinedAllocata
         private bool used;
         private TMPro.TextMeshPro? text;
         private bool meetingText;
+        private readonly NGWordNameLabel nameLabel = new();
         public Instance(Player player, int[] args) : base(player)
         { entry = NGWordEntry.Decode(args); request = args.Length > 0 ? args[0] : 0; }
         void RuntimeAssignable.OnActivated() { }
-        public bool SpeechEligible => entry != null && !used && !MyPlayer.IsDead && !MyPlayer.IsDisconnected &&
+        public bool SpeechEligible => !NGWordSubmission.Waiting && entry != null && !used && !MyPlayer.IsDead && !MyPlayer.IsDisconnected &&
             AmongUsClient.Instance != null && AmongUsClient.Instance.GameState == InnerNet.InnerNetClient.GameStates.Started &&
             !HeroSpeechHost.IsPresent(IntroCutscene.Instance) && !HeroSpeechHost.IsPresent(ExileController.Instance) && (!HeroSpeechHost.IsPresent(MeetingHud.Instance) || Meetings);
         public object SpeechJob => new { playerId = MyPlayer.PlayerId, kind = "ng", request,
@@ -115,6 +108,7 @@ public sealed class NGWord : DefinedAllocatableModifierTemplate, DefinedAllocata
         }
         private void Update(GameUpdateEvent ev)
         {
+            UpdateNameLabel();
             if (!AmOwner) return;
             bool meeting = HeroSpeechHost.IsPresent(MeetingHud.Instance);
             if (text != null && meeting != meetingText) DestroyText();
@@ -122,8 +116,16 @@ public sealed class NGWord : DefinedAllocatableModifierTemplate, DefinedAllocata
             if (text == null) return;
             text.gameObject.SetActive(!MyPlayer.IsDead && !MyPlayer.IsDisconnected);
             string status = !SpeechEligible ? "paused" : HeroSpeechHost.ReadyFor(MyPlayer.PlayerId) ? "active" : "disconnected";
-            text.text = NebulaAPI.Language.Translate("role.tanukiNGWord.hud") + "「" + (entry?.Display ?? "—") + "」\n<size=65%>" +
-                NebulaAPI.Language.Translate("role.tanukiNGWord." + status) + "</size>";
+            string state = NebulaAPI.Language.Translate("role.tanukiNGWord." + status);
+            text.text = HideOwnWord ? "<size=65%>" + state + "</size>" :
+                NebulaAPI.Language.Translate("role.tanukiNGWord.hud") + "「" + (entry?.Display ?? "—") + "」\n<size=65%>" + state + "</size>";
+        }
+        private void UpdateNameLabel()
+        {
+            bool playing = AmongUsClient.Instance != null && AmongUsClient.Instance.GameState == InnerNet.InnerNetClient.GameStates.Started;
+            bool visible = HideOwnWord && !AmOwner && entry != null && playing && !MyPlayer.IsDead && !MyPlayer.IsDisconnected &&
+                !HeroSpeechHost.IsPresent(IntroCutscene.Instance) && !HeroSpeechHost.IsPresent(ExileController.Instance);
+            nameLabel.Update(MyPlayer.PlayerId, entry?.Display ?? "", visible);
         }
         private void CreateText(bool meeting)
         {
@@ -142,6 +144,6 @@ public sealed class NGWord : DefinedAllocatableModifierTemplate, DefinedAllocata
             meetingText = meeting;
         }
         private void DestroyText() { if (text != null) UnityEngine.Object.Destroy(text.gameObject); text = null; }
-        protected override void OnReleased() { DestroyText(); base.OnReleased(); }
+        protected override void OnReleased() { DestroyText(); nameLabel.Dispose(); base.OnReleased(); }
     }
 }
