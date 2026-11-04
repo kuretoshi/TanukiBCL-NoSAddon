@@ -30,6 +30,7 @@ public static class VoiceJammingBroadcast
             pitch = pitch == null ? 1d : VoiceJammingRound.PitchFor(pitch.Seed, id)
         }).ToArray();
         string json = JsonSerializer.Serialize(new { protocol = 1, pid = Environment.ProcessId, unixMs = now, players });
+        if (!AddonLinkState.Update("jamming", json)) return;
         try
         {
             Directory.CreateDirectory(Path.GetDirectoryName(path)!);
@@ -42,6 +43,7 @@ public static class VoiceJammingBroadcast
     public static void Remove(byte owner)
     {
         if (!entries.Remove(owner)) return;
+        AddonLinkState.Clear("jamming");
         lastWrite = 0;
         // Invalidate immediately; the other living ability instances republish next frame.
         try { File.Delete(path); File.Delete(path + ".tmp"); }

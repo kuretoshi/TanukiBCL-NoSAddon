@@ -123,7 +123,11 @@ public sealed class NGWord : DefinedAllocatableModifierTemplate, DefinedAllocata
         private void UpdateNameLabel()
         {
             bool playing = AmongUsClient.Instance != null && AmongUsClient.Instance.GameState == InnerNet.InnerNetClient.GameStates.Started;
-            bool visible = HideOwnWord && !AmOwner && entry != null && playing && !MyPlayer.IsDead && !MyPlayer.IsDisconnected &&
+            // Reveal every assigned word to a dead viewer, including their own
+            // and dead players' words, regardless of the living-player mode.
+            bool ghostViewer = PlayerControl.LocalPlayer?.Data?.IsDead == true;
+            bool reveal = ghostViewer || (HideOwnWord && !AmOwner && !MyPlayer.IsDead);
+            bool visible = reveal && entry != null && playing && !MyPlayer.IsDisconnected &&
                 !HeroSpeechHost.IsPresent(IntroCutscene.Instance) && !HeroSpeechHost.IsPresent(ExileController.Instance);
             nameLabel.Update(MyPlayer.PlayerId, entry?.Display ?? "", visible);
         }

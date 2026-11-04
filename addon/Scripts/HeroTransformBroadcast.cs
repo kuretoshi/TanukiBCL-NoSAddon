@@ -11,6 +11,7 @@ public static class HeroTransformBroadcast
 {
     private static readonly Dictionary<byte, HeroKind> players = new();
     private static long lastWrite;
+    public static int AddonKindFor(byte player) => players.TryGetValue(player, out var kind) ? (kind == HeroKind.Super ? 1 : 2) : 0;
     private static readonly string path = Path.Combine(Environment.GetEnvironmentVariable("LOCALAPPDATA") ??
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "TanukiBCL", "NoS",
         "hero-transforms-" + Environment.ProcessId + ".json");
@@ -33,6 +34,7 @@ public static class HeroTransformBroadcast
         lastWrite = now;
         var entries = players.Select(p => new { playerId = p.Key, kind = p.Value == HeroKind.Super ? "super" : "evil" }).ToArray();
         string json = JsonSerializer.Serialize(new { protocol = 1, pid = Environment.ProcessId, unixMs = now, players = entries });
+        if (!AddonLinkState.Update("heroes", json)) return;
         try
         {
             Directory.CreateDirectory(Path.GetDirectoryName(path)!);

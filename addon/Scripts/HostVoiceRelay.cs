@@ -1,6 +1,7 @@
 using System;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -30,6 +31,13 @@ public static class HostVoiceRelay
             postfix: new HarmonyMethod(typeof(HostVoiceRelay), nameof(Update)));
     }
     public static string? VersionFor(byte player) => feed.VersionFor(player, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
+    public static void AcceptUnified(byte player, double rms, bool active, string? version, long now)
+    {
+        var control = PlayerControl.AllPlayerControls.ToArray().FirstOrDefault(p => p.PlayerId == player);
+        if (control?.Data == null || control.Data.IsDead || control.Data.Disconnected || now - throttled[player] < 80) return;
+        throttled[player] = now;
+        Rpc.Invoke((player, (float)rms, active, VoiceVersionRequirement.Normalize(version) ?? ""));
+    }
     public static bool TryRead(byte player, ref long consumed, out double rms, out bool active)
     {
         return feed.TryRead(player, ref consumed, out rms, out active, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());

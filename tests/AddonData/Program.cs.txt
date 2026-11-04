@@ -1,0 +1,33 @@
+using TanukiBCL.Roles;
+
+void Check(bool ok, string name) { if (!ok) throw new Exception(name); }
+for (int hero = 0; hero <= 2; hero++)
+    for (int half = -1; half <= 60; half++)
+    {
+        float? range = half < 0 ? null : half / 2f;
+        int encoded = TanukiAddonDataCodec.Encode(hero, range);
+        Check(TanukiAddonDataCodec.TryDecode(encoded, out var decodedHero, out var decodedRange) &&
+            decodedHero == hero && decodedRange == range, "All supported states round trip without loss");
+        int v2 = TanukiAddonDataCodec.EncodeV2(hero, range, 0xFE00);
+        Check(TanukiAddonDataCodec.TryDecode(v2, out decodedHero, out decodedRange) && decodedHero == hero && decodedRange == range,
+            "V2 flags preserve the scalar state");
+    }
+foreach (int invalid in new[] { 0, -1, 0x544B0200, 0x544B0003, 0x544B00F4, 0x544B0004 })
+    Check(!TanukiAddonDataCodec.TryDecode(invalid, out _, out _), "Foreign, reserved or invalid data rejected");
+var api = TanukiAddonDataApi.TryCreate(typeof(FakeTBCLEvent));
+Check(api != null, "Discover public event API");
+var ev = new FakeTBCLEvent();
+api!.UpdatePlayer(ev, 23, TanukiAddonDataCodec.Encode(2, 3.5f));
+api.UpdateSnapshot(ev, TanukiAddonDataCodec.SnapshotMarker);
+Check(ev.Players[23] == 0x544B011E && ev.Snapshot == 0x544B0001, "Calls only the selected public overloads");
+Check(TanukiAddonDataApi.TryCreate(typeof(object)) == null, "Old NoS without the API is supported");
+Console.WriteLine("PASS AddonData: all 186 scalar states, invalid tags/bits, public event API and missing API");
+
+public sealed class FakeTBCLEvent
+{
+    public int[] Players = new int[24];
+    public int Snapshot;
+    public void UpdatePlayerData(byte player, int value) => Players[player] = value;
+    public void UpdatePlayerData(object player, int value) => throw new Exception("Wrong overload");
+    public void UpdateSnapshotData(int value) => Snapshot = value;
+}

@@ -29,6 +29,7 @@ public static class BibiriEcho
             json.Append("{\"playerId\":").Append(i).Append(",\"unixMs\":").Append(deaths[i]).Append('}');
         }
         json.Append("]}");
+        if (!AddonLinkState.Update("echoes", json.ToString())) return;
         try
         {
             Directory.CreateDirectory(Path.GetDirectoryName(path)!);

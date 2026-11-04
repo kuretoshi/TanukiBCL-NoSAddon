@@ -46,6 +46,7 @@ public static class MegaphoneBroadcast
                 .Append(",\"phase\":\"").Append(entry.Value.firing ? "firing" : "charging").Append("\"}");
         }
         json.Append("]}");
+        if (!AddonLinkState.Update("megaphones", json.ToString())) return;
         try
         {
             Directory.CreateDirectory(Path.GetDirectoryName(path)!);

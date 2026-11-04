@@ -42,6 +42,7 @@ public static class InterviewerBroadcast
         var players = entries.Values.Select(e => new { e.playerId, e.started, e.seconds, e.stopped,
             visible = e.visible.Select(id => (int)id).ToArray(), e.playStarted }).ToArray();
         string json = JsonSerializer.Serialize(new { protocol = 1, pid = Environment.ProcessId, unixMs = now, players });
+        if (!AddonLinkState.Update("interviews", json)) return;
         try
         {
             Directory.CreateDirectory(Path.GetDirectoryName(path)!);

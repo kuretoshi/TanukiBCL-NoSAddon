@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><OutputType>Exe</OutputType><TargetFramework>net8.0</TargetFramework><ImplicitUsings>enable</ImplicitUsings><Nullable>enable</Nullable><EnableDefaultCompileItems>false</EnableDefaultCompileItems></PropertyGroup>
+  <ItemGroup>
+    <Compile Include="Program.cs.txt" />
+    <Compile Include="../../addon/Scripts/AddonLinkWire.cs" Link="AddonLinkWire.cs" />
+    <Compile Include="../../addon/Scripts/AddonLinkServer.cs" Link="AddonLinkServer.cs" />
+    <Compile Include="../../addon/Scripts/AddonLinkState.cs" Link="AddonLinkState.cs" />
+    <Compile Include="../../addon/Scripts/AddonLinkVoice.cs" Link="AddonLinkVoice.cs" />
+    <Compile Include="../../addon/Scripts/HostVoiceFeed.cs" Link="HostVoiceFeed.cs" />
+    <Compile Include="../../addon/Scripts/TanukiAddonDataCodec.cs" Link="TanukiAddonDataCodec.cs" />
+  <Compile Include="../../addon/Scripts/VoiceVersionRequirement.cs" Link="VoiceVersionRequirement.cs" /></ItemGroup>
+</Project>

@@ -47,6 +47,7 @@ public static class DyingVoiceBroadcast
                 .Append(",\"y\":").Append(e.y.ToString("R", CultureInfo.InvariantCulture)).Append('}');
         }
         json.Append("]}");
+        if (!AddonLinkState.Update("dying", json.ToString())) return;
         try
         {
             Directory.CreateDirectory(Path.GetDirectoryName(path)!);

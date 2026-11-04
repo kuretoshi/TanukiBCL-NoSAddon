@@ -20,6 +20,8 @@ public sealed class VoiceBridge : IDisposable
     private long sequence = -1;
     private long directConsumed = -1;
     private long hostConsumed = -1;
+    private long unifiedConsumed = -1;
+    private int unifiedEpoch = -1;
     private DirectVoiceServer? lastDirect;
     private long delivered = -1;
     private double nextPublish;
@@ -85,6 +87,14 @@ public sealed class VoiceBridge : IDisposable
         seq = -1;
         rms = 0;
         active = false;
+        long now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        if (unifiedEpoch != AddonLinkVoice.Epoch) { unifiedEpoch = AddonLinkVoice.Epoch; unifiedConsumed = -1; }
+        if (AddonLinkVoice.TryRead(playerId, ref unifiedConsumed, out rms, out active, now))
+        {
+            LatestFromHostRelay = false; LatestVersion = AddonLinkVoice.VersionFor(playerId, now);
+            seq = ++delivered; LatestRms = rms; LatestActive = active; lastSample = clock.Elapsed.TotalSeconds;
+            return true;
+        }
         if (HostVoiceRelay.TryRead(playerId, ref hostConsumed, out rms, out active))
         {
             LatestFromHostRelay = true;

@@ -1,6 +1,8 @@
 using TanukiBCL.Roles;
 
 if (args.Length == 1 && args[0] == "--direct-test-server") { await DirectVoiceTests.Serve(); return; }
+if (args.Length == 1 && args[0] == "--ng-files-test") { NGWordTests.Run(Check); NGWordFileTests.Run(Check); return; }
+if (args.Length == 1 && args[0] == "--hero-phrase-test") { HeroPhraseTests.Run(Check); HeroTransformTests.Run(Check); return; }
 
 static void Check(bool ok, string name) { if (!ok) throw new Exception(name); }
 VoiceJammingTests.Run(Check);
@@ -308,9 +310,9 @@ Console.WriteLine("PASS host relay validation and role bridge");
 
 Check(!VoiceVersionRequirement.IsSupported(null), "missing client version needs update notice");
 Check(!VoiceVersionRequirement.IsSupported("3.2.46"), "old client version needs update notice");
-Check(VoiceVersionRequirement.IsSupported("3.2.47"), "minimum client version accepted");
-Check(VoiceVersionRequirement.IsSupported("3.2.48"), "newer client version accepted");
-Check(VoiceVersionRequirement.IsSupported("3.2.47-net-beta.1"), "NET equivalent version accepted");
+Check(VoiceVersionRequirement.IsSupported(VoiceVersionRequirement.Minimum), "minimum client version accepted");
+Check(VoiceVersionRequirement.IsSupported("3.2.63"), "newer client version accepted");
+Check(VoiceVersionRequirement.IsSupported(VoiceVersionRequirement.Minimum + "-net-beta.1"), "NET equivalent version accepted");
 Check(!VoiceVersionRequirement.IsSupported("3.2.35garbage"), "malformed client version rejected");
 
 var versionDir = Path.Combine(Path.GetTempPath(), "tanuki-version-" + Guid.NewGuid().ToString("N"));

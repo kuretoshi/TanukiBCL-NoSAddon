@@ -1,0 +1,91 @@
+using System.Net;
+using System.Net.Sockets;
+using System.Text;
+using System.Text.Json;
+using TanukiBCL.Link;
+using TanukiBCL.Roles;
+
+static long Now() => DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+static void Check(bool condition, string message) { if (!condition) throw new Exception(message); }
+static JsonElement Json(string text) { using var doc = JsonDocument.Parse(text); return doc.RootElement.Clone(); }
+if (args.Contains("--server")) { await Fixture(); return; }
+
+var framer = new AddonLinkFramer();
+byte[] text = Encoding.UTF8.GetBytes("{\"word\":\"変身\"}\n{}\n");
+Check(framer.Push(text.AsSpan(0, 11)).Count == 0, "split UTF8 is buffered");
+Check(framer.Push(text.AsSpan(11)).SequenceEqual(new[] { "{\"word\":\"変身\"}", "{}" }), "fragmented/multiple frames");
+try { new AddonLinkFramer().Push(new byte[131073]); throw new Exception("oversize accepted"); }
+catch (InvalidOperationException) { }
+try { new AddonLinkFramer().Push(new byte[] { 0xff, 10 }); throw new Exception("invalid UTF8 accepted"); }
+catch (DecoderFallbackException) { }
+try { new AddonLinkFramer().Push(Enumerable.Repeat((byte)10, 65).ToArray()); throw new Exception("frame flood accepted"); }
+catch (InvalidOperationException) { }
+long sequence = 0, now = Now(); string token = new('a', 32);
+var command = new { kind = "ready", protocol = 1, pid = 42, session = token, sequence = 1, unixMs = now, players = new[] { 1 } };
+var valid = Json(JsonSerializer.Serialize(command));
+Check(AddonLinkWire.Valid(valid, 42, token, now, ref sequence), "valid command");
+Check(!AddonLinkWire.Valid(valid, 42, token, now, ref sequence), "replay rejected");
+sequence = 0; Check(!AddonLinkWire.Valid(valid, 43, token, now, ref sequence), "other PID rejected");
+Check(!AddonLinkWire.Valid(valid, 42, new string('b',32), now, ref sequence), "other session rejected");
+Check(!AddonLinkWire.Valid(valid, 42, token, now + 501, ref sequence), "stale command rejected");
+Check(sequence == 0, "invalid input does not consume sequence");
+AddonLinkState.Reset();
+Check(AddonLinkState.Snapshot(now).Count == 9, "all channels always present");
+AddonLinkState.Update("heroes", "{\"players\":[{\"playerId\":1,\"kind\":\"super\"}]}");
+Check(AddonLinkState.Snapshot(Now())["heroes"].GetArrayLength() == 1, "registry accepts publisher envelope");
+Check(AddonLinkState.Snapshot(Now() + 1001)["heroes"].GetArrayLength() == 0, "expired heartbeat clears effects");
+AddonLinkState.Update("muted", "{\"players\":[1]}");
+Check(AddonLinkState.Snapshot(Now() + 10001)["muted"].GetArrayLength() == 1, "exhausted speech stays muted on heartbeat loss");
+Check((AddonLinkState.FlagsFor(1) & 512) != 0, "player flag for mute");
+AddonLinkState.Update("muted", "{\"players\":[]}");
+Check(AddonLinkState.Snapshot(Now())["muted"].GetArrayLength() == 0, "explicit empty clears mute");
+Check(TanukiAddonDataCodec.Endpoint(12345) == (0x54420000 | 12345), "endpoint marker");
+Check((TanukiAddonDataCodec.EncodeV2(1, 3.5f, 512) & 0xffff0000) == 0x544c0000, "v2 player marker");
+using (var server = new AddonLinkServer(42))
+{
+    server.SetSnapshot("{\"kind\":\"state\"}", 1);
+    using var client = new TcpClient(); await client.ConnectAsync(IPAddress.Loopback, server.Port);
+    var stream = client.GetStream(); using var reader = new StreamReader(stream, Encoding.UTF8, leaveOpen: true);
+    await Write(stream, new { kind = "hello", protocol = 1, pid = 42, nonce = token });
+    var hello = Json((await reader.ReadLineAsync().WaitAsync(TimeSpan.FromSeconds(2)))!);
+    Check(hello.GetProperty("nonce").GetString() == token, "nonce-bound handshake");
+    Check(!server.Healthy(Now()), "hello alone never suppresses fallback");
+    await Write(stream, new { kind = "poll", protocol = 1, pid = 42, session = server.Session, sequence = 1, unixMs = Now(), accepted = 0 });
+    await reader.ReadLineAsync().WaitAsync(TimeSpan.FromSeconds(2));
+    Check(!server.Healthy(Now()), "unvalidated snapshot never suppresses fallback");
+    await Write(stream, new { kind = "poll", protocol = 1, pid = 42, session = server.Session, sequence = 2, unixMs = Now(), accepted = 1 });
+    await reader.ReadLineAsync().WaitAsync(TimeSpan.FromSeconds(2));
+    Check(server.Healthy(Now()), "acknowledged snapshot suppresses fallback");
+    await Write(stream, new { kind = "ready", protocol = 1, pid = 42, session = server.Session, sequence = 3, unixMs = Now(), players = new[] { 1 } });
+    await Task.Delay(50); Check(server.TryRead(out var received) && received.GetProperty("kind").GetString() == "ready", "command queued for game thread");
+    await Task.Delay(510); Check(!server.Healthy(Now()), "expired ack restores fallback");
+}
+Console.WriteLine("PASS addon link framing, PID/session/replay guards, state registry, flags, real TCP handshake/ack/commands/fallback");
+
+static async Task Write(NetworkStream stream, object value) => await stream.WriteAsync(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(value) + "\n"));
+static async Task Fixture()
+{
+    using var server = new AddonLinkServer(Environment.ProcessId);
+    Console.WriteLine(JsonSerializer.Serialize(new { pid = Environment.ProcessId, port = server.Port, session = server.Session }));
+    Console.Out.Flush();
+    var input = Task.Run(() => Console.In.ReadLine()); long revision = 0;
+    string phase = "tasks"; int local = 1; bool host = true; JsonElement? custom = null;
+    while (true)
+    {
+        if (input.IsCompleted)
+        {
+            string? line = await input; if (line == null) break;
+            using var doc = JsonDocument.Parse(line); var m = doc.RootElement;
+            if (m.TryGetProperty("channels", out var c)) custom = c.Clone();
+            if (m.TryGetProperty("phase", out var p)) phase = p.GetString()!;
+            if (m.TryGetProperty("localPlayer", out var l)) local = l.GetInt32();
+            if (m.TryGetProperty("host", out var h)) host = h.GetBoolean();
+            input = Task.Run(() => Console.In.ReadLine());
+        }
+        var channels = custom ?? Json(JsonSerializer.Serialize(AddonLinkState.Snapshot(Now())));
+        server.SetSnapshot(JsonSerializer.Serialize(new { kind = "state", protocol = 1, pid = Environment.ProcessId,
+            session = server.Session, sequence = ++revision, unixMs = Now(), phase, localPlayer = local, host, channels }), revision);
+        while (server.TryRead(out var command)) Console.WriteLine(JsonSerializer.Serialize(new { command }));
+        Console.Out.Flush(); await Task.Delay(50);
+    }
+}

@@ -45,6 +45,8 @@ public static class HeroSpeechHost
     }
     public static void Update()
     {
+        AddonLinkRuntime.Update();
+        TanukiAddonDataBridge.EnsureGameHook();
         var game = AmongUsClient.Instance;
         bool active = game != null && game.GameState == InnerNet.InnerNetClient.GameStates.Started &&
             NebulaAPI.CurrentGame != null && !HeroSpeechHost.IsPresent(ExileController.Instance) && !HeroSpeechHost.IsPresent(IntroCutscene.Instance);
@@ -52,7 +54,7 @@ public static class HeroSpeechHost
             (NebulaAPI.CurrentGame != null ? 4 : 0) | (HeroSpeechHost.IsPresent(IntroCutscene.Instance) ? 8 : 0) | (HeroSpeechHost.IsPresent(ExileController.Instance) ? 16 : 0);
         if (stage != lastStage) { lastStage = stage; NebulaAPI.Logging.NebulaLogger("TanukiSpeech").Message("Bridge stage=" + stage); }
         NGWordSubmission.Tick();
-        if (!active) { Close(); return; }
+        if (!active) { AddonLinkState.Clear("speech"); Close(); return; }
         try { NGWord.EnsureAllPlayersAssigned(); }
         catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException || ex is ArgumentException)
         { NebulaAPI.Logging.NebulaLogger("TanukiSpeech").Error(ex.Message); }
@@ -64,7 +66,7 @@ public static class HeroSpeechHost
             if (hero != null && hero.SpeechEligible) jobs.Add(hero.SpeechJob);
             if (player.TryGetModifier<NGWord.Instance>(out var ng) && ng.SpeechEligible) jobs.Add(ng.SpeechJob);
         }
-        if (jobs.Count == 0) { Close(); return; }
+        if (jobs.Count == 0) { AddonLinkState.Clear("speech"); Close(); return; }
         try { Tick(jobs); }
         catch (Exception ex) when (ex is IOException || ex is SocketException || ex is UnauthorizedAccessException) { Close(); }
     }
@@ -77,6 +79,7 @@ public static class HeroSpeechHost
         nextPublish = now + 200;
         int port = ((IPEndPoint)socket!.Client.LocalEndPoint!).Port;
         string json = JsonSerializer.Serialize(new { protocol = 2, pid = Environment.ProcessId, port, token, updated = now, players = jobs });
+        if (!AddonLinkState.Update("speech", json)) return;
         File.WriteAllText(path + ".tmp", json, new UTF8Encoding(false));
         File.Move(path + ".tmp", path, true);
     }
@@ -117,5 +120,22 @@ public static class HeroSpeechHost
         try { if (File.Exists(path)) File.Delete(path); }
         catch (IOException) { }
         catch (UnauthorizedAccessException) { }
+    }
+    private static Virial.Game.Player? UnifiedPlayer(byte id)
+    {
+        var player = NebulaAPI.CurrentGame?.GetPlayer(id);
+        return player != null && !player.IsDead && !player.IsDisconnected &&
+            (player.AmOwner || AmongUsClient.Instance.AmHost) ? player : null;
+    }
+    public static void AcceptUnifiedReady(byte id)
+    {
+        if (UnifiedPlayer(id) != null) ReadyRpc.Invoke((id, true));
+    }
+    public static void AcceptUnifiedWord(byte id, int request, string? kind, string? word)
+    {
+        var player = UnifiedPlayer(id);
+        if (player == null || !ReadyFor(id)) return;
+        if (kind == "hero") player.Role.GetAbility<HeroAbility>()?.RecogniseSpeech(request);
+        if (kind == "ng" && player.TryGetModifier<NGWord.Instance>(out var ng)) ng.RecogniseSpeech(request);
     }
 }
