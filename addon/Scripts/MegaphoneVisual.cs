@@ -7,8 +7,8 @@ namespace TanukiBCL.Roles;
 // Original layered vector art; the icon and in-game model share this design.
 public sealed class MegaphoneVisual
 {
-    public static readonly Image Icon = new WrapSpriteLoader(() => SpriteArt(true));
-    public static readonly Image PortableIcon = new WrapSpriteLoader(() => SpriteArt(true, true));
+    public static readonly Image Icon = VoiceRoleIcons.MegaphoneLaser;
+    public static readonly Image PortableIcon = VoiceRoleIcons.PortableMegaphone;
     public static Sprite PortableSprite => SpriteArt(false, true);
     private static Sprite? iconSprite, gunSprite, portableIconSprite, portableGunSprite;
     private readonly GameObject root = new("TanukiMegaphone");

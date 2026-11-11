@@ -1,0 +1,23 @@
+using TanukiBCL.Roles;
+
+void Check(bool ok, string name) { if (!ok) throw new Exception(name); }
+Check(VoiceStoneRules.TryWord("ねこ", 8, out var word) && word == "ねこ", "Japanese word");
+Check(VoiceStoneRules.Width("インポスター", .5f) == 3f && VoiceStoneRules.Width("ねこ", .5f) == 1f, "Character-proportional width");
+Check(VoiceStoneRules.TryWord("ＴＡＳＫ", 4, out word) && word == "TASK", "Compatibility normalization");
+foreach (var invalid in new[] { "", "猫 犬", "<b>猫", "猫\n", "🐈", "長すぎる単語です", "\ud800" })
+    Check(!VoiceStoneRules.TryWord(invalid, 4, out _), "Reject invalid or oversized word: " + invalid);
+var state = new VoiceStoneRequest();
+Check(state.Arm(1, 100, 5), "Begin listening");
+Check(!state.Arm(2, 101, 5), "Cannot replace an active request");
+Check(!state.Accept(2, 102, "猫", 8, out _), "Reject another request");
+Check(!state.Accept(1, 102, "猫 犬", 8, out _) && state.Waiting, "Bad word does not consume request");
+Check(state.Accept(1, 103, "猫", 8, out word) && word == "猫", "Accept valid word");
+Check(!state.Accept(1, 104, "犬", 8, out _), "Replay cannot create a second stone");
+Check(!state.Arm(1, 106, 5) && state.Arm(2, 106, 5), "Sequence must advance");
+Check(!state.Accept(2, 111, "猫", 8, out _), "Expired speech cannot create a stone");
+state.Cancel();
+Check(!state.Accept(2, 107, "猫", 8, out _), "Meeting or death cancellation blocks late results");
+Check(state.Arm(3, 112, 5), "Next request after cancellation");
+Check(state.Accept(3, 117.4, "猫", 8, out _, 1), "In-time RPC has bounded delivery grace");
+Check(!state.Arm(4, 120, double.NaN), "Reject invalid timer");
+Console.WriteLine("PASS voice stone word validation, proportional width, requests, replay and cancellation");

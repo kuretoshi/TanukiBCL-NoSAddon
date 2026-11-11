@@ -6,7 +6,7 @@ namespace TanukiBCL.Roles;
 
 public static class AddonLinkState
 {
-    public static readonly string[] Channels = { "heroes", "portable", "megaphones", "dying", "interviews", "jamming", "echoes", "muted", "speech" };
+    public static readonly string[] Channels = { "heroes", "portable", "megaphones", "dying", "interviews", "jamming", "echoes", "muted", "speech", "ears", "parrots" };
     private sealed record Entry(JsonElement Players, long Updated);
     private static readonly Dictionary<string, Entry> entries = new();
     public static bool LegacyRequired { get; set; } = true;

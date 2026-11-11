@@ -1,6 +1,12 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <ItemGroup><Compile Remove="NGWordSubmission/**" /><Compile Include="../addon/Scripts/NGWordFiles.cs" Link="NGWordFiles.cs" /><Compile Include="../addon/Scripts/HeroTransformPhrase.cs" Link="HeroTransformPhrase.cs" /></ItemGroup>
-  <ItemGroup><Compile Remove="**/obj/**/*.cs;**/bin/**/*.cs" /><Compile Include="../addon/Scripts/AddonLinkState.cs" Link="AddonLinkState.cs" /><Compile Include="../addon/Scripts/AddonLinkVoice.cs" Link="AddonLinkVoice.cs" /></ItemGroup>
+<ItemGroup><Compile Remove="NGWordSubmission/**" /></ItemGroup>
+<ItemGroup><Compile Include="../addon/Scripts/CloneRound.cs" Link="CloneRound.cs" /><Compile Include="../addon/Scripts/ParrotBroadcast.cs" Link="ParrotBroadcast.cs" /></ItemGroup>
+<ItemGroup><Compile Include="../addon/Scripts/ParrotRound.cs" Link="ParrotRound.cs" /></ItemGroup>
+  <ItemGroup><Compile Include="../addon/Scripts/WallEarRound.cs" Link="WallEarRound.cs" /></ItemGroup>
+  <ItemGroup><Compile Remove="**/obj/**/*.cs;**/bin/**/*.cs;RuntimeAddon/**/*.cs;CloneApiProbe/**/*.cs" /></ItemGroup>
+  <ItemGroup><Compile Include="../addon/Scripts/AddonLinkState.cs" Link="AddonLinkState.cs" /><Compile Include="../addon/Scripts/AddonLinkVoice.cs" Link="AddonLinkVoice.cs" /></ItemGroup>
+  <ItemGroup><Compile Include="../addon/Scripts/HeroTransformPhrase.cs" Link="HeroTransformPhrase.cs" /></ItemGroup>
+  <ItemGroup><Compile Include="../addon/Scripts/NGWordFiles.cs" Link="NGWordFiles.cs" /></ItemGroup>
   <ItemGroup><Compile Include="../addon/Scripts/NGWordList.cs" Link="NGWordList.cs" /></ItemGroup>
   <ItemGroup><Compile Include="../addon/Scripts/HeroTransformBroadcast.cs" Link="HeroTransformBroadcast.cs" /></ItemGroup>
   <ItemGroup><Compile Include="../addon/Scripts/HeroTransformState.cs" Link="HeroTransformState.cs" /></ItemGroup>

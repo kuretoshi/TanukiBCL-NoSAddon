@@ -65,6 +65,8 @@ public static class HeroSpeechHost
             var hero = player.Role.GetAbility<HeroAbility>();
             if (hero != null && hero.SpeechEligible) jobs.Add(hero.SpeechJob);
             if (player.TryGetModifier<NGWord.Instance>(out var ng) && ng.SpeechEligible) jobs.Add(ng.SpeechJob);
+            var stone = player.Role.GetAbility<VoiceStone.Ability>();
+            if (stone != null && stone.SpeechEligible) jobs.Add(stone.SpeechJob);
         }
         if (jobs.Count == 0) { AddonLinkState.Clear("speech"); Close(); return; }
         try { Tick(jobs); }
@@ -108,9 +110,25 @@ public static class HeroSpeechHost
             if (fields[5] == "0" || fields[5] == "1") ReadyRpc.Invoke((id, fields[5] == "1"));
             return;
         }
-        if (fields.Length != 7 || fields[2] != "word" || !int.TryParse(fields[5], out int request) || !ReadyFor(id)) return;
+        if (fields.Length < 7 || fields.Length > 8 || fields[2] != "word" || !int.TryParse(fields[5], out int request) || !ReadyFor(id)) return;
+        if (fields.Length == 8)
+        {
+            if (fields[6] == "stone") ReadStone(player, request, fields[7]);
+            return;
+        }
         if (fields[6] == "henshin") player.Role.GetAbility<HeroAbility>()?.RecogniseSpeech(request);
         if (fields[6] == "ng" && player.TryGetModifier<NGWord.Instance>(out var ng)) ng.RecogniseSpeech(request);
+    }
+    private static void ReadStone(Virial.Game.Player player, int request, string encoded)
+    {
+        if (encoded.Length > 64) return;
+        try
+        {
+            string word = new UTF8Encoding(false, true).GetString(Convert.FromBase64String(encoded));
+            player.Role.GetAbility<VoiceStone.Ability>()?.RecogniseSpeech(request, word);
+        }
+        catch (FormatException) { }
+        catch (DecoderFallbackException) { }
     }
     private static void Close()
     {
@@ -137,5 +155,6 @@ public static class HeroSpeechHost
         if (player == null || !ReadyFor(id)) return;
         if (kind == "hero") player.Role.GetAbility<HeroAbility>()?.RecogniseSpeech(request);
         if (kind == "ng" && player.TryGetModifier<NGWord.Instance>(out var ng)) ng.RecogniseSpeech(request);
+        if (kind == "stone" && word != null) player.Role.GetAbility<VoiceStone.Ability>()?.RecogniseSpeech(request, word);
     }
 }

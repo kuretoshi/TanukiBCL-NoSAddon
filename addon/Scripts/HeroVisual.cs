@@ -11,8 +11,8 @@ namespace TanukiBCL.Roles;
 // Full costume replacement with separate light/dark transformation effects.
 public sealed class HeroVisual : IDisposable
 {
-    public static readonly Image SuperIcon = new WrapSpriteLoader(() => GetSprite(HeroKind.Super, 0));
-    public static readonly Image EvilIcon = new WrapSpriteLoader(() => GetSprite(HeroKind.Evil, 0));
+    public static readonly Image SuperIcon = VoiceRoleIcons.SuperHero;
+    public static readonly Image EvilIcon = VoiceRoleIcons.EvilHero;
     public static readonly Image SuperTransformIcon = new WrapSpriteLoader(() => GetTransformIcon(HeroKind.Super));
     public static readonly Image EvilTransformIcon = new WrapSpriteLoader(() => GetTransformIcon(HeroKind.Evil));
     private static readonly Sprite?[] transformIcons = new Sprite?[2];
@@ -88,6 +88,7 @@ public sealed class HeroVisual : IDisposable
     }
     public static Sprite GetSprite(HeroKind kind, int part)
     {
+        if (part == 0) return kind == HeroKind.Super ? VoiceRoleIcons.SuperHeroSprite : VoiceRoleIcons.EvilHeroSprite;
         if (sprites[(int)kind, part] != null) return sprites[(int)kind, part]!;
         const int size = 256;
         var texture = new Texture2D(size, size, TextureFormat.RGBA32, false) { filterMode = FilterMode.Bilinear };

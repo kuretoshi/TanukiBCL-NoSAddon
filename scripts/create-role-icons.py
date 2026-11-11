@@ -1,6 +1,8 @@
 from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont
 root=Path(__file__).resolve().parent.parent
+if (root / 'addon/Resources/RoleIcons/Bibiri.png').exists():
+    raise SystemExit('Legacy vector generator disabled. Use scripts/preview-role-icons.py for the PNG icon set.')
 dark='#15202d'; white='#f4ffff'; tan='#c4a470'; mint='#64dcb4'
 # Vector primitives in a 128-square canvas. The same primitives generate Unity art.
 def ellipse(box,color): return ('ellipse',box,color)

@@ -102,7 +102,7 @@ public sealed class AddonLinkServer : IDisposable
             string state = Volatile.Read(ref snapshot);
             return state.Length > 0 ? state : null;
         }
-        if (kind is not ("sample" or "ready" or "word")) return null;
+        if (kind is not ("sample" or "ready" or "word" or "parrot")) return null;
         if (Interlocked.Increment(ref queued) <= 128) commands.Enqueue(m.Clone());
         else Interlocked.Decrement(ref queued);
         return null;

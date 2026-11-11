@@ -1,0 +1,22 @@
+{
+  "pid": 52168,
+  "unixMs": 1794283668782,
+  "action": "assign:tanukiClone",
+  "role": "tanukiClone",
+  "dead": false,
+  "canMove": true,
+  "fakePlayers": [
+    {
+      "id": 256,
+      "owner": 0,
+      "name": "開発者くれとし",
+      "active": true,
+      "x": 2.375152,
+      "y": -1.395469,
+      "kill": "Disappear"
+    }
+  ],
+  "x": 33.5,
+  "y": -1.7545199,
+  "objects": []
+}

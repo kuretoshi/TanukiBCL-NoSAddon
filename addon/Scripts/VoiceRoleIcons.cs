@@ -1,105 +1,59 @@
+using System.IO;
 using UnityEngine;
 using Nebula.Utilities;
 using Virial.Media;
+
 namespace TanukiBCL.Roles;
+
+// Distinct PNG artwork, shared by role lists and each modifier's HUD indicator.
 public static class VoiceRoleIcons
 {
-    public static readonly Image Bibiri = new WrapSpriteLoader(() => Create(0));
-    public static readonly Image Talkative = new WrapSpriteLoader(() => Create(1));
-    public static Sprite TalkativeSprite => Create(1);
-    public static Sprite BibiriSprite => Create(0);
-    private static readonly Sprite?[] cache = new Sprite?[2];
-    private sealed class Shape
-    {
-        public readonly int Kind; public readonly Color32 Color; public readonly float Width; public readonly float[] P;
-        public Shape(int kind, Color32 color, float width, float[] p) { Kind=kind; Color=color; Width=width; P=p; }
-        public bool Contains(float x, float y)
-        {
-            if (Kind == 0) { float rx=(P[2]-P[0])/2, ry=(P[3]-P[1])/2; x=(x-(P[0]+P[2])/2)/rx; y=(y-(P[1]+P[3])/2)/ry; return x*x+y*y<=1; }
-            if (Kind == 2) {
-                for(int i=2;i<P.Length;i+=2) { float ax=P[i-2],ay=P[i-1],dx=P[i]-ax,dy=P[i+1]-ay; float t=Mathf.Clamp01(((x-ax)*dx+(y-ay)*dy)/(dx*dx+dy*dy)); float ex=x-ax-t*dx,ey=y-ay-t*dy; if(ex*ex+ey*ey<=Width*Width/4)return true; }
-                return false;
-            }
-            bool hit=false;
-            for(int i=0,j=P.Length-2;i<P.Length;j=i,i+=2)
-                if((P[i+1]>y)!=(P[j+1]>y) && x<(P[j]-P[i])*(y-P[i+1])/(P[j+1]-P[i+1])+P[i])hit=!hit;
-            return hit;
-        }
-    }
-    private static readonly Shape[][] art = new Shape[][] {
-new Shape[] {
-new Shape(0, new Color32(21,32,45,255), 0f, new float[] {29f,41f,91f,111f}),
-new Shape(0, new Color32(196,164,112,255), 0f, new float[] {34f,46f,86f,105f}),
-new Shape(0, new Color32(21,32,45,255), 0f, new float[] {38f,82f,58f,118f}),
-new Shape(0, new Color32(196,164,112,255), 0f, new float[] {43f,84f,54f,113f}),
-new Shape(0, new Color32(21,32,45,255), 0f, new float[] {65f,82f,85f,118f}),
-new Shape(0, new Color32(196,164,112,255), 0f, new float[] {69f,84f,81f,113f}),
-new Shape(0, new Color32(21,32,45,255), 0f, new float[] {21f,60f,40f,98f}),
-new Shape(0, new Color32(196,164,112,255), 0f, new float[] {25f,65f,36f,94f}),
-new Shape(0, new Color32(21,32,45,255), 0f, new float[] {41f,53f,98f,83f}),
-new Shape(0, new Color32(180,233,243,255), 0f, new float[] {46f,57f,93f,78f}),
-new Shape(0, new Color32(244,255,255,255), 0f, new float[] {50f,58f,77f,66f}),
-new Shape(2, new Color32(21,32,45,255), 3f, new float[] {48f,74f,54f,69f,60f,74f}),
-new Shape(2, new Color32(21,32,45,255), 3f, new float[] {72f,74f,78f,69f,84f,74f}),
-new Shape(1, new Color32(112,217,255,255), 0f, new float[] {96f,37f,102f,48f,102f,54f,98f,57f,94f,54f,94f,48f}),
-new Shape(2, new Color32(196,164,112,255), 4f, new float[] {18f,46f,12f,54f,18f,61f,12f,70f}),
-new Shape(2, new Color32(196,164,112,255), 4f, new float[] {108f,65f,114f,73f,108f,82f,114f,91f}),
-new Shape(2, new Color32(196,164,112,255), 4f, new float[] {42f,30f,38f,19f}),
-new Shape(2, new Color32(196,164,112,255), 4f, new float[] {60f,28f,61f,14f}),
-new Shape(2, new Color32(196,164,112,255), 4f, new float[] {78f,30f,84f,20f})
-},
-new Shape[] {
-new Shape(0, new Color32(21,32,45,255), 0f, new float[] {29f,41f,91f,111f}),
-new Shape(0, new Color32(100,220,180,255), 0f, new float[] {34f,46f,86f,105f}),
-new Shape(0, new Color32(21,32,45,255), 0f, new float[] {38f,82f,58f,118f}),
-new Shape(0, new Color32(100,220,180,255), 0f, new float[] {43f,84f,54f,113f}),
-new Shape(0, new Color32(21,32,45,255), 0f, new float[] {65f,82f,85f,118f}),
-new Shape(0, new Color32(100,220,180,255), 0f, new float[] {69f,84f,81f,113f}),
-new Shape(0, new Color32(21,32,45,255), 0f, new float[] {21f,60f,40f,98f}),
-new Shape(0, new Color32(100,220,180,255), 0f, new float[] {25f,65f,36f,94f}),
-new Shape(0, new Color32(21,32,45,255), 0f, new float[] {41f,53f,98f,83f}),
-new Shape(0, new Color32(180,233,243,255), 0f, new float[] {46f,57f,93f,78f}),
-new Shape(0, new Color32(244,255,255,255), 0f, new float[] {50f,58f,77f,66f}),
-new Shape(0, new Color32(21,32,45,255), 0f, new float[] {60f,5f,119f,47f}),
-new Shape(1, new Color32(21,32,45,255), 0f, new float[] {75f,38f,70f,55f,94f,40f}),
-new Shape(0, new Color32(244,255,255,255), 0f, new float[] {65f,10f,114f,42f}),
-new Shape(1, new Color32(244,255,255,255), 0f, new float[] {79f,36f,78f,45f,90f,36f}),
-new Shape(0, new Color32(100,220,180,255), 0f, new float[] {74f,23f,79f,28f}),
-new Shape(0, new Color32(100,220,180,255), 0f, new float[] {86f,23f,91f,28f}),
-new Shape(0, new Color32(100,220,180,255), 0f, new float[] {98f,23f,103f,28f}),
-new Shape(2, new Color32(100,220,180,255), 4f, new float[] {102f,66f,109f,72f,102f,79f}),
-new Shape(2, new Color32(100,220,180,255), 4f, new float[] {114f,59f,122f,72f,114f,86f})
-}
+    public static readonly Image Bibiri = new WrapSpriteLoader(() => Get(0));
+    public static readonly Image Talkative = new WrapSpriteLoader(() => Get(1));
+    public static readonly Image LimitSpeech = new WrapSpriteLoader(() => Get(2));
+    public static readonly Image NGWord = new WrapSpriteLoader(() => Get(3));
+    public static readonly Image SuperHero = new WrapSpriteLoader(() => Get(4));
+    public static readonly Image EvilHero = new WrapSpriteLoader(() => Get(5));
+    public static readonly Image Interviewer = new WrapSpriteLoader(() => Get(6));
+    public static readonly Image VoiceJamminger = new WrapSpriteLoader(() => Get(7));
+    public static readonly Image VoiceStone = new WrapSpriteLoader(() => Get(8));
+    public static readonly Image DyingVoiceMessage = new WrapSpriteLoader(() => Get(9));
+    public static readonly Image MegaphoneLaser = new WrapSpriteLoader(() => Get(10));
+    public static readonly Image PortableMegaphone = new WrapSpriteLoader(() => Get(11));
+    public static readonly Image WallEar = new WrapSpriteLoader(() => Get(12));
+    public static readonly Image ParrotTrainer = new WrapSpriteLoader(() => Get(13));
+    public static Sprite InterviewerSprite => Get(6);
+    public static Sprite VoiceJammingerSprite => Get(7);
+    public static Sprite DyingVoiceSprite => Get(9);
+    public static Sprite BibiriSprite => Get(0);
+    public static Sprite TalkativeSprite => Get(1);
+    public static Sprite LimitSpeechSprite => Get(2);
+    public static Sprite SuperHeroSprite => Get(4);
+    public static Sprite EvilHeroSprite => Get(5);
+    private static readonly string[] Names = { "Bibiri", "Talkative", "LimitSpeech", "NGWord", "SuperHero", "EvilHero",
+        "Interviewer", "VoiceJamminger", "VoiceStone", "DyingVoiceMessage",
+        "MegaphoneLaser", "PortableMegaphone", "WallEar", "ParrotTrainer" };
+    private static readonly Sprite?[] Cache = new Sprite?[Names.Length];
+    private static readonly float[] CanvasWidths = {
+        256f / 175f, 256f / 175f, 256f / 175f, 256f / 175f, 256f / 175f, 256f / 175f,
+        256f / 200f, 128f / 85f, 96f / 75f, 256f / 200f,
+        256f / 175f, 256f / 175f, 1f, 1f
     };
-    private static Color SampleColor(int kind, float x, float y)
+
+    private static Sprite Get(int index)
     {
-        Color color=Color.clear;
-        foreach(var shape in art[kind]) if(shape.Contains(x,y)) color=shape.Color;
-        return color;
-    }
-    private static Color PixelColor(int kind, int x, int y)
-    {
-            Color sum=Color.clear;
-            for(int sy=0;sy<2;sy++)for(int sx=0;sx<2;sx++) {
-                Color c=SampleColor(kind,(x+(sx+.5f)/2)/2,128-(y+(sy+.5f)/2)/2);
-                sum+=c*.25f;
-            }
-            // Straight alpha avoids dark edges on the white UI frame.
-            if(sum.a>0){sum.r/=sum.a;sum.g/=sum.a;sum.b/=sum.a;}
-        return sum;
-    }
-    private static Sprite Create(int kind)
-    {
-        if(cache[kind]!=null)return cache[kind]!;
-        const int size=256;
-        var pixels=new Color[size*size];
-        for(int y=0;y<size;y++)for(int x=0;x<size;x++) {
-            pixels[y*size+x]=PixelColor(kind,x,y);
-        }
-        var texture=new Texture2D(size,size,TextureFormat.RGBA32,false);
-        texture.filterMode=FilterMode.Bilinear; texture.wrapMode=TextureWrapMode.Clamp;
-        texture.SetPixels(pixels);texture.Apply();
-        cache[kind]=Sprite.Create(texture,new Rect(0,0,size,size),new Vector2(.5f,.5f),175f);
-        return cache[kind]!;
+        if (Cache[index] != null) return Cache[index]!;
+        string resource = "RoleIcons/" + Names[index] + ".png";
+        using var stream = Virial.NebulaAPI.GetAddon("tanuki.bcl.roles")?.GetResource(resource)?.AsStream()
+            ?? throw new FileNotFoundException("Missing role icon: " + resource);
+        using var bytes = new MemoryStream();
+        stream.CopyTo(bytes);
+        var texture = new Texture2D(2, 2, TextureFormat.RGBA32, false)
+        { filterMode = FilterMode.Bilinear, wrapMode = TextureWrapMode.Clamp };
+        GraphicsHelper.LoadImage(texture, bytes.ToArray(), false);
+        // Preserve each previous icon canvas so HUD buttons and map markers retain their size.
+        Cache[index] = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height),
+            new Vector2(.5f, .5f), texture.width / CanvasWidths[index]);
+        return Cache[index]!;
     }
 }

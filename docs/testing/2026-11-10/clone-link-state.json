@@ -1,0 +1,23 @@
+{
+  "unixMs": 1794283717981,
+  "parrots": [
+    {
+      "mode": "clone",
+      "ownerId": 0,
+      "birdId": 1000000,
+      "x": 33.5,
+      "y": -1.7545199,
+      "range": 3.5,
+      "seconds": 10,
+      "recordId": 2,
+      "sourceId": 0,
+      "started": 1794283681204,
+      "clips": [
+        2
+      ],
+      "playId": 0,
+      "playClip": 0,
+      "playStarted": 0
+    }
+  ]
+}

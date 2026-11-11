@@ -28,13 +28,13 @@ public sealed class NGWord : DefinedAllocatableModifierTemplate, DefinedAllocata
     private static object? assignedGame;
     private NGWord() : base("tanukiNGWord", "TNG", new Virial.Color(245, 140, 70), new IConfiguration[] { Enabled, Meetings, HideOwnWord, PlayerInput, AssignCount })
     {
-        ConfigurationHolder!.Illustration = VoiceRoleIcons.Talkative;
+        ConfigurationHolder!.Illustration = VoiceRoleIcons.NGWord;
         ConfigurationHolder.AddTags(AddonRoleTag.Tag);
         ConfigurationHolder.AppendConfiguration(NGWordSettings.Option());
         ConfigurationHolder.SetDisplayState(() => Enabled ? ConfigurationHolderState.Activated : ConfigurationHolderState.Inactivated);
         NebulaAPI.Logging.NebulaLogger("TanukiSpeech").Message("NG all-player option=" + (bool)Enabled + "; config=" + DataSaver.DataSaverFolderPath);
     }
-    Virial.Media.Image? DefinedAssignable.IconImage => VoiceRoleIcons.Talkative;
+    Virial.Media.Image? DefinedAssignable.IconImage => VoiceRoleIcons.NGWord;
     bool IAssignableDocument.HasTips => true;
     bool ISpawnable.IsSpawnable => Enabled;
     void HasAssignmentRoutine.TryAssign(IRoleTable table)

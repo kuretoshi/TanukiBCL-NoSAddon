@@ -63,6 +63,7 @@ public static class AddonLinkRuntime
         string? kind = AddonLinkWire.Text(command, "kind");
         if (kind == "sample") { Sample(command, now); return; }
         if (kind == "ready") { Ready(command); return; }
+        if (kind == "parrot") { Parrot(command); return; }
         if (kind != "word" || !AddonLinkWire.Integer(command, "playerId", out long id) || id < 0 || id > 255 ||
             !AddonLinkWire.Integer(command, "request", out long request) || request <= 0 || request > int.MaxValue) return;
         HeroSpeechHost.AcceptUnifiedWord((byte)id, (int)request, AddonLinkWire.Text(command, "speechKind"), AddonLinkWire.Text(command, "word"));
@@ -83,6 +84,13 @@ public static class AddonLinkRuntime
         if (!command.TryGetProperty("players", out var ids) || ids.ValueKind != JsonValueKind.Array || ids.GetArrayLength() > 24) return;
         foreach (var id in ids.EnumerateArray())
             if (id.ValueKind == JsonValueKind.Number && id.TryGetByte(out byte player)) HeroSpeechHost.AcceptUnifiedReady(player);
+    }
+    private static void Parrot(JsonElement command)
+    {
+        if (AmongUsClient.Instance.AmHost != true || !AddonLinkWire.Integer(command, "ownerId", out long ownerId) || ownerId < 0 || ownerId > 255 ||
+            !AddonLinkWire.Integer(command, "birdId", out long bird) || bird <= 0 || bird > int.MaxValue ||
+            !AddonLinkWire.Integer(command, "sourceId", out long source) || source < 0 || source > 255) return;
+        ParrotTrainer.RequestCapture((byte)ownerId, (int)bird, (byte)source);
     }
     private static void Close()
     {

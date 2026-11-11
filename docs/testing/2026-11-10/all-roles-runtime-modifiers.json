@@ -1,0 +1,169 @@
+{
+  "pid": 36680,
+  "running": false,
+  "remaining": 0,
+  "results": [
+    {
+      "step": "modifier:Bibiri",
+      "ok": true,
+      "dead": false,
+      "unixMs": 1794306259266
+    },
+    {
+      "step": "bibiri:quiet",
+      "ok": true,
+      "dead": false,
+      "unixMs": 1794306259764
+    },
+    {
+      "step": "bibiri:quiet-survives",
+      "ok": true,
+      "dead": false,
+      "unixMs": 1794306260365
+    },
+    {
+      "step": "bibiri:loud-death",
+      "ok": true,
+      "dead": true,
+      "unixMs": 1794306260972
+    },
+    {
+      "step": "modifier:Talkative",
+      "ok": true,
+      "dead": false,
+      "unixMs": 1794306261819
+    },
+    {
+      "step": "talkative:speaking",
+      "ok": true,
+      "dead": false,
+      "unixMs": 1794306262311
+    },
+    {
+      "step": "talkative:silence",
+      "ok": true,
+      "dead": false,
+      "unixMs": 1794306263312
+    },
+    {
+      "step": "talkative:silence-death",
+      "ok": true,
+      "dead": true,
+      "unixMs": 1794306284834
+    },
+    {
+      "step": "modifier:LimitSpeech",
+      "ok": true,
+      "dead": false,
+      "unixMs": 1794306285645
+    },
+    {
+      "step": "limit:short-test-budget",
+      "ok": true,
+      "dead": false,
+      "unixMs": 1794306286234
+    },
+    {
+      "step": "limit:configured-expiry",
+      "ok": true,
+      "dead": true,
+      "unixMs": 1794306287835
+    },
+    {
+      "step": "limit:post-expiry",
+      "ok": true,
+      "dead": true,
+      "unixMs": 1794306288233
+    },
+    {
+      "step": "modifier:NGWord",
+      "ok": true,
+      "dead": false,
+      "unixMs": 1794306289073
+    },
+    {
+      "step": "ng:wrong-result",
+      "ok": true,
+      "dead": false,
+      "unixMs": 1794306289567
+    },
+    {
+      "step": "ng:synthetic-hit",
+      "ok": true,
+      "dead": true,
+      "unixMs": 1794306289974
+    },
+    {
+      "step": "ng:death-and-own-word-reveal",
+      "ok": true,
+      "dead": true,
+      "unixMs": 1794306290473
+    },
+    {
+      "step": "modifier:DyingVoiceMessage",
+      "ok": true,
+      "dead": false,
+      "unixMs": 1794306291306
+    },
+    {
+      "step": "dying:death",
+      "ok": true,
+      "dead": true,
+      "unixMs": 1794306291912
+    },
+    {
+      "step": "dying:recording-ui",
+      "ok": true,
+      "dead": true,
+      "unixMs": 1794306292444
+    },
+    {
+      "step": "dying:automatic-close-and-ghost-marker",
+      "ok": true,
+      "dead": true,
+      "unixMs": 1794306302968
+    },
+    {
+      "step": "cleanup:all",
+      "ok": true,
+      "dead": false,
+      "unixMs": 1794306303170
+    },
+    {
+      "step": "cleanup:released-world-and-audio",
+      "ok": true,
+      "dead": false,
+      "unixMs": 1794306303969
+    },
+    {
+      "step": "role:VoiceJamminger",
+      "ok": true,
+      "dead": false,
+      "unixMs": 1794306304849
+    },
+    {
+      "step": "jamminger:request-meeting",
+      "ok": true,
+      "dead": false,
+      "unixMs": 1794306305876
+    },
+    {
+      "step": "jamminger:meeting-started",
+      "ok": true,
+      "dead": false,
+      "unixMs": 1794306309133
+    },
+    {
+      "step": "jamminger:pitch-button",
+      "ok": true,
+      "dead": false,
+      "unixMs": 1794306309637
+    },
+    {
+      "step": "jamminger:pitch-active",
+      "ok": true,
+      "dead": false,
+      "unixMs": 1794306310036
+    }
+  ]
+}

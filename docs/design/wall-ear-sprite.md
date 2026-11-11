@@ -1,0 +1,7 @@
+# 壁に耳ありのスプライト（2026-11-10）
+
+ユーザー指定により、人間の耳そのもののイラストを内蔵画像生成ツールで制作した。ゲーム用画像は `addon/Resources/WallEar.png`（256×256、RGBA、背景透過）。透明な余白を整えて縮小し、アルファを維持した。設置オブジェクト・能力ボタン・役職アイコンは同じ画像を共用する。
+
+最終プロンプト:
+
+Use case: stylized-concept. Asset type: a clean HUMAN EAR illustration used as a small 2D game icon and placed object. Draw exactly ONE ordinary human external ear viewed from the side, upright, full isolated ear with an unmistakable natural anatomical silhouette: rounded upper helix rim, narrower middle indentation, a soft rounded earlobe at the bottom, visible inner antihelix fold, concha bowl and small tragus. Warm peach skin tone with simple muted pink inner folds and one darker peach cel-shadow region. Smooth thick dark brown near-black outline, clear bold curved interior lines, simple polished flat cartoon illustration readable at 32px. Human ear only, no face, no head, no body. Natural ordinary proportions, no anthropomorphizing, no eyes or mouth or cute character features. NOT a balloon, pin, bean, leaf, headset or hearing aid. No green coloration, no sound-wave marks, no extra symbols, no labels, no text, no border badge, no watermark. Centered single ear on a square canvas, complete silhouette with a small even transparent margin. Background truly transparent; no white rectangle, no floor shadow. Friendly non-gory illustration, not a photorealistic severed body part and not an anatomical cross-section.

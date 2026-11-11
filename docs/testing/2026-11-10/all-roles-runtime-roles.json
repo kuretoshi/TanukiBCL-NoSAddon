@@ -1,0 +1,232 @@
+{
+  "pid": 41664,
+  "section": "roles-through-interviewer-meeting",
+  "note": "Normal roles and actual meeting recording/playback. Stopped before local-freeplay meeting wrap-up; modifiers recorded separately.",
+  "results": [
+    {
+      "step": "role:PortableMegaphone",
+      "ok": true,
+      "unixMs": 1794305262532
+    },
+    {
+      "step": "megaphone:on",
+      "ok": true,
+      "unixMs": 1794305262892
+    },
+    {
+      "step": "megaphone:range-and-model",
+      "ok": true,
+      "unixMs": 1794305263531
+    },
+    {
+      "step": "megaphone:off",
+      "ok": true,
+      "unixMs": 1794305263628
+    },
+    {
+      "step": "megaphone:off-clears",
+      "ok": true,
+      "unixMs": 1794305264028
+    },
+    {
+      "step": "role:MegaphoneBazooka",
+      "ok": true,
+      "unixMs": 1794305264958
+    },
+    {
+      "step": "laser:charge",
+      "ok": true,
+      "unixMs": 1794305265358
+    },
+    {
+      "step": "laser:charging-lock",
+      "ok": true,
+      "unixMs": 1794305265723
+    },
+    {
+      "step": "laser:automatic-fire",
+      "ok": true,
+      "unixMs": 1794305268855
+    },
+    {
+      "step": "laser:automatic-finish",
+      "ok": true,
+      "unixMs": 1794305274355
+    },
+    {
+      "step": "role:SuperHero",
+      "ok": true,
+      "unixMs": 1794305275198
+    },
+    {
+      "step": "SuperHero:synthetic-recognition",
+      "ok": true,
+      "unixMs": 1794305275865
+    },
+    {
+      "step": "SuperHero:costume-and-state",
+      "ok": true,
+      "unixMs": 1794305276427
+    },
+    {
+      "step": "SuperHero:automatic-revert",
+      "ok": true,
+      "unixMs": 1794305286967
+    },
+    {
+      "step": "role:EvilHero",
+      "ok": true,
+      "unixMs": 1794305287772
+    },
+    {
+      "step": "EvilHero:synthetic-recognition",
+      "ok": true,
+      "unixMs": 1794305288393
+    },
+    {
+      "step": "EvilHero:costume-and-state",
+      "ok": true,
+      "unixMs": 1794305288987
+    },
+    {
+      "step": "EvilHero:automatic-revert",
+      "ok": true,
+      "unixMs": 1794305299534
+    },
+    {
+      "step": "role:WallEar",
+      "ok": true,
+      "unixMs": 1794305300361
+    },
+    {
+      "step": "ear:place",
+      "ok": true,
+      "unixMs": 1794305300859
+    },
+    {
+      "step": "ear:listen",
+      "ok": true,
+      "unixMs": 1794305301259
+    },
+    {
+      "step": "ear:freeze-and-route",
+      "ok": true,
+      "unixMs": 1794305301658
+    },
+    {
+      "step": "ear:release",
+      "ok": true,
+      "unixMs": 1794305301794
+    },
+    {
+      "step": "ear:unfreeze",
+      "ok": true,
+      "unixMs": 1794305302191
+    },
+    {
+      "step": "role:ParrotTrainer",
+      "ok": true,
+      "unixMs": 1794305302995
+    },
+    {
+      "step": "parrot:place",
+      "ok": true,
+      "unixMs": 1794305303492
+    },
+    {
+      "step": "parrot:record",
+      "ok": true,
+      "unixMs": 1794305303893
+    },
+    {
+      "step": "parrot:clip-ready",
+      "ok": true,
+      "unixMs": 1794305305891
+    },
+    {
+      "step": "role:VoiceStone",
+      "ok": true,
+      "unixMs": 1794305306696
+    },
+    {
+      "step": "stone:arm",
+      "ok": true,
+      "unixMs": 1794305307191
+    },
+    {
+      "step": "stone:synthetic-word",
+      "ok": true,
+      "unixMs": 1794305307397
+    },
+    {
+      "step": "stone:solid-text",
+      "ok": true,
+      "unixMs": 1794305307892
+    },
+    {
+      "step": "role:CloneRole",
+      "ok": true,
+      "unixMs": 1794305308697
+    },
+    {
+      "step": "clone:record",
+      "ok": true,
+      "unixMs": 1794305309192
+    },
+    {
+      "step": "clone:summon",
+      "ok": true,
+      "unixMs": 1794305319781
+    },
+    {
+      "step": "clone:one-active",
+      "ok": true,
+      "unixMs": 1794305320724
+    },
+    {
+      "step": "clone:overwrite",
+      "ok": true,
+      "unixMs": 1794305320858
+    },
+    {
+      "step": "clone:overwrite-clears",
+      "ok": true,
+      "unixMs": 1794305321359
+    },
+    {
+      "step": "role:Interviewer",
+      "ok": true,
+      "unixMs": 1794305322196
+    },
+    {
+      "step": "interview:record",
+      "ok": true,
+      "unixMs": 1794305322701
+    },
+    {
+      "step": "interview:includes-self",
+      "ok": true,
+      "unixMs": 1794305323293
+    },
+    {
+      "step": "interview:request-meeting",
+      "ok": true,
+      "unixMs": 1794305324396
+    },
+    {
+      "step": "interview:meeting-started",
+      "ok": true,
+      "unixMs": 1794305327622
+    },
+    {
+      "step": "interview:partial-save-and-button",
+      "ok": true,
+      "unixMs": 1794305328123
+    },
+    {
+      "step": "interview:meeting-play",
+      "ok": true,
+      "unixMs": 1794305328456
+    }
+  ]
+}

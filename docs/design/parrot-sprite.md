@@ -1,0 +1,7 @@
+# オウムのスプライト（2026-11-10）
+
+内蔵の画像生成ツールで制作。アモアスのペットに馴染む太い暗色の輪郭とシンプルな陰影に変更。ゲーム用画像は `addon/Resources/Parrot.png`（256×256、RGBA、背景透過）。透明な余白を整えて縮小し、アルファを維持した。設置オブジェクト・能力ボタン・役職アイコンは同じ画像を共用する。
+
+最終プロンプト:
+
+Edit this parrot sprite into a cute pet that belongs naturally in the visual world of Among Us. This is a REPLACEMENT production game sprite, not a mockup. Preserve the parrot identity and green plumage, blue folded wing, warm yellow-orange hooked beak. Change the style radically from detailed glossy kawaii illustration to Among Us pet art: EXTREMELY THICK smooth near-black outline, squat compact bean-shaped body and oversize round head, short stubby feet, just a few broad simple feather shapes, very limited flat colors, one simple darker cel-shadow patch per body section, clean readable silhouette at 32 pixels. Side / slight three-quarter view facing right. Use ONE simple white oval eye with a small black pupil and a friendly curious expression; the eye must not be huge glossy anime eyes. A small curved hook-shaped parrot beak clearly distinguishes it from a duck. Tiny restrained crest, no eyebrows, no rosy cheeks, no fluffy cheek ruff, no intricate feather layers, no gradients, no shine sparkles, no realistic texture, no text. It should look like a compact charming Among Us companion pet rather than a children's sticker mascot. Full body centered in a square with a small transparent margin, entire tail/crest/feet visible. Transparent background, no floor, no shadow outside bird, no white sticker border.
