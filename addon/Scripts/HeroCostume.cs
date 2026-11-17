@@ -9,7 +9,9 @@ namespace TanukiBCL.Roles;
 // items and NoS's registered outfit definitions remain unchanged.
 public sealed class HeroCostume : IDisposable
 {
-    private readonly Dictionary<int, (SpriteRenderer renderer, bool hidden)> originals = new();
+    private static readonly Dictionary<int, List<HeroCostume>> owners = new();
+    private readonly Dictionary<int, (SpriteRenderer renderer, bool hidden)> originals;
+    private readonly int ownerId, priority;
     private readonly PlayerControl vanilla;
     private readonly CosmicHat hat;
     private readonly Transform? handSlot;
@@ -21,18 +23,42 @@ public sealed class HeroCostume : IDisposable
     private float walkMinY = float.PositiveInfinity, walkMaxY = float.NegativeInfinity;
     private readonly HashSet<int> walkFrames = new();
 
-    public HeroCostume(PlayerControl vanilla, HeroKind kind)
+    public HeroCostume(PlayerControl vanilla, HeroKind kind) : this(vanilla, kind == HeroKind.Super ? "SuperHero" : "EvilHero") { }
+    public HeroCostume(PlayerControl vanilla, string name, bool pixelated = false)
     {
         this.vanilla = vanilla;
-        string id = CosmicHat.IdToProductId("TanukiBCL_" + (kind == HeroKind.Super ? "SuperHero" : "EvilHero"));
+        string id = CosmicHat.IdToProductId("TanukiBCL_" + name);
         if (!MoreCosmic.AllHats.TryGetValue(id, out var registered) || registered.Main?.GetSprite(0) == null)
             throw new InvalidOperationException("Hero MoreCosmic costume is not loaded: " + id);
         hat = registered;
         handSlot = vanilla.transform.Find("HandSlot");
         motionNode = vanilla.cosmetics.hat.SpriteSyncNode;
         motionEnabled = motionNode != null && motionNode.enabled;
-        try { Apply(); Update(); }
+        bool bitCostume = name.StartsWith("BitCharacter", StringComparison.Ordinal);
+        ownerId = vanilla.GetInstanceID(); priority = bitCostume ? 10 : 100;
+        if (!owners.TryGetValue(ownerId, out var group)) { group = new(); owners.Add(ownerId, group); }
+        originals = group.Count == 0 ? new() : group[0].originals;
+        if (group.Count > 0) motionEnabled = group[0].motionEnabled;
+        group.Add(this);
+        try { if (bitCostume) PrepareBitTextures(pixelated); if (IsActive) { Apply(); Update(); } }
         catch { Dispose(); throw; }
+    }
+    private bool IsActive => ReferenceEquals(ActiveOwner(ownerId), this);
+    private static HeroCostume? ActiveOwner(int id)
+    {
+        if (!owners.TryGetValue(id, out var group)) return null;
+        HeroCostume? active = null;
+        foreach (var owner in group)
+            if (!owner.disposed && (active == null || owner.priority >= active.priority)) active = owner;
+        return active;
+    }
+    private void PrepareBitTextures(bool pixelated)
+    {
+        foreach (var image in new[] { hat.Main, hat.Move, hat.Climb, hat.ClimbDown, hat.EnterVent, hat.ExitVent, hat.Exile })
+        {
+            var sprite = image?.GetSprite(0);
+            if (sprite != null) sprite.texture.filterMode = pixelated ? FilterMode.Point : FilterMode.Bilinear;
+        }
     }
     private void Apply()
     {
@@ -45,7 +71,7 @@ public sealed class HeroCostume : IDisposable
     }
     public void Update()
     {
-        if (disposed || vanilla == null || vanilla.cosmetics == null) return;
+        if (disposed || !IsActive || vanilla == null || vanilla.cosmetics == null) return;
         // The body is outside CosmeticsLayer, and its active renderer can change.
         // Instance IDs keep repeated IL2CPP wrappers from replacing the snapshot.
         foreach (var sprite in vanilla.cosmetics.bodySprites) Hide(sprite.BodySprite);
@@ -58,7 +84,7 @@ public sealed class HeroCostume : IDisposable
     }
     public void LateUpdate()
     {
-        if (disposed || vanilla == null || vanilla.MyPhysics == null) return;
+        if (disposed || !IsActive || vanilla == null || vanilla.MyPhysics == null) return;
         // Even the no-bounce hat node moves vertically through the run cycle.
         // Full-body artwork needs the layer's stationary hat origin instead.
         // Release the native node immediately for idle, ladder and vent states.
@@ -100,7 +126,12 @@ public sealed class HeroCostume : IDisposable
     public void Dispose()
     {
         if (disposed) return;
+        bool active = IsActive;
         disposed = true;
+        if (owners.TryGetValue(ownerId, out var group)) group.Remove(this);
+        var next = ActiveOwner(ownerId);
+        if (next != null) { if (active) next.Apply(); return; }
+        owners.Remove(ownerId);
         RestoreMotion();
         if (walkSamples > 0)
             Virial.NebulaAPI.Logging.NebulaLogger("TanukiHero").Message($"Walk: {hat.ProductId}, samples={walkSamples}, moveFrames={walkFrames.Count}, attachmentY={walkMinY:F4}..{walkMaxY:F4}");

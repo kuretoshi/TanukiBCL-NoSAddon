@@ -318,7 +318,8 @@ Console.WriteLine("PASS host relay validation and role bridge");
 Check(!VoiceVersionRequirement.IsSupported(null), "missing client version needs update notice");
 Check(!VoiceVersionRequirement.IsSupported("3.2.46"), "old client version needs update notice");
 Check(VoiceVersionRequirement.IsSupported(VoiceVersionRequirement.Minimum), "minimum client version accepted");
-Check(VoiceVersionRequirement.IsSupported("3.2.65"), "newer client version accepted");
+var minimumVersion = Version.Parse(VoiceVersionRequirement.Minimum);
+Check(VoiceVersionRequirement.IsSupported(new Version(minimumVersion.Major, minimumVersion.Minor, minimumVersion.Build + 1).ToString()), "newer client version accepted");
 Check(VoiceVersionRequirement.IsSupported(VoiceVersionRequirement.Minimum + "-net-beta.1"), "NET equivalent version accepted");
 Check(!VoiceVersionRequirement.IsSupported("3.2.35garbage"), "malformed client version rejected");
 

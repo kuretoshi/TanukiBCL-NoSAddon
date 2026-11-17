@@ -4,7 +4,7 @@ namespace TanukiBCL.Roles;
 
 public static class VoiceVersionRequirement
 {
-    public const string Minimum = "3.2.64";
+    public const string Minimum = "3.2.66";
     public static string? Normalize(string? value)
     {
         if (string.IsNullOrEmpty(value) || value.Length > 64) return null;

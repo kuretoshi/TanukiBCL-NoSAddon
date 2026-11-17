@@ -1,0 +1,62 @@
+using TanukiBCL.Roles;
+using Nebula.Modules.Cosmetics;
+using UnityEngine;
+void Check(bool valid, string message) { if (!valid) throw new Exception(message); }
+var progress = new BitCharacterProgress(5,10,15,20,25,30);
+Check(progress.Stage == 0 && progress.Remaining == 5, "starts in 2bit");
+Check(!progress.Advance(60,false) && progress.Elapsed == 0, "meeting, death and intro pause");
+Check(!progress.Advance(4.99,true), "before exact boundary");
+Check(progress.Advance(.01,true) && progress.Stage == 1 && progress.Remaining == 10, "exact 4bit boundary");
+Check(progress.Advance(25,true) && progress.Stage == 3 && progress.Remaining == 20, "cross multiple stages");
+Check(!progress.Advance(300,false) && progress.Stage == 3, "meeting preserves partial timeline");
+Check(!progress.Advance(double.NaN,true) && !progress.Advance(-1,true), "invalid delta rejected");
+Check(progress.Advance(45,true) && progress.Stage == 5 && progress.Remaining == 30 && BitCharacterProgress.Bits[5] == 64, "64bit has a separate duration at total75s");
+Check(!progress.Advance(300,false) && progress.Remaining == 30, "meeting pauses the 64bit stage");
+Check(!progress.Advance(29,true) && progress.Stage == 5 && progress.Remaining == 1, "64bit remains active until its own deadline");
+Check(progress.Advance(1,true) && progress.Stage == BitCharacterProgress.FinalStage && progress.Remaining == 0, "restores normal after 64bit at total105s");
+Check(!progress.Advance(100,true), "final stage stable");
+try { new BitCharacterProgress(0,1,2,3,4,5); throw new Exception("accepted zero duration"); } catch(ArgumentException) { }
+try { new BitCharacterProgress(1,2,3,4,5); throw new Exception("accepted missing 64bit duration"); } catch(ArgumentException) { }
+AddonLinkState.Reset(); BitCharacterBroadcast.Set(1,0); BitCharacterBroadcast.Set(2,4);
+var rows=AddonLinkState.Snapshot(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds())["bits"];
+Check(rows.GetArrayLength()==2 && rows[1].GetProperty("stage").GetInt32()==4,"multiple modifier holders share link");
+BitCharacterBroadcast.Remove(1);
+Check(AddonLinkState.Snapshot(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds())["bits"].GetArrayLength()==1,"removal preserves others");
+BitCharacterBroadcast.Remove(2);
+Check(AddonLinkState.Snapshot(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds())["bits"].GetArrayLength()==0,"last removal clears");
+BitCharacterBroadcast.Set(3,5);
+Check(AddonLinkState.Snapshot(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds())["bits"][0].GetProperty("stage").GetInt32()==5,"64bit broadcast");
+BitCharacterBroadcast.Set(3,6);
+Check(AddonLinkState.Snapshot(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds())["bits"][0].GetProperty("stage").GetInt32()==6,"final original stage broadcast");
+BitCharacterBroadcast.Remove(3);
+foreach(string name in new[]{"BitCharacter2","BitCharacter4","BitCharacter64","SuperHero","EvilHero"}) MoreCosmic.AllHats[CosmicHat.IdToProductId("TanukiBCL_"+name)]=new CosmicHat(name);
+var player=new PlayerControl();
+var bit=new HeroCostume(player,"BitCharacter2",true);bit.Update();
+Check(player.cosmetics.hat.Hat!.ProductId.EndsWith("BitCharacter2") && player.Body.forceRenderingOff,"bit applies and hides normal body");
+bit.LateUpdate();Check(!player.cosmetics.hat.SpriteSyncNode!.enabled,"walk synchronizer disabled");
+var hero=new HeroCostume(player,HeroKind.Super);hero.Update();
+Check(player.cosmetics.hat.Hat!.ProductId.EndsWith("SuperHero"),"hero takes priority");
+bit.Dispose();
+var nextBit=new HeroCostume(player,"BitCharacter4",true);nextBit.Update();nextBit.LateUpdate();
+Check(player.cosmetics.hat.Hat!.ProductId.EndsWith("SuperHero"),"stage change cannot overwrite hero");
+hero.Dispose();Check(player.cosmetics.hat.Hat!.ProductId.EndsWith("BitCharacter4"),"hero expiry resumes current bit stage");
+nextBit.Dispose();
+Check(player.cosmetics.hat.Hat!.ProductId=="original-hat" && player.cosmetics.Skin=="original-skin" && player.cosmetics.Visor=="original-visor","last costume restores actual wardrobe");
+Check(!player.Body.forceRenderingOff && player.cosmetics.hat.SpriteSyncNode!.enabled,"original rendering and synchronizer restored");
+player.Body.forceRenderingOff=true;
+using(var b=new HeroCostume(player,"BitCharacter2",true)) b.Update();
+Check(player.Body.forceRenderingOff,"preexisting hidden state preserved");
+player.Body.forceRenderingOff=false;
+using(var smooth=new HeroCostume(player,"BitCharacter64",false))
+{
+    var art=MoreCosmic.AllHats[CosmicHat.IdToProductId("TanukiBCL_BitCharacter64")];
+    Check(art.Main.GetSprite(0).texture.filterMode==FilterMode.Bilinear,"64bit uses smooth filtering");
+    using(var evil=new HeroCostume(player,HeroKind.Evil))
+    {
+        smooth.Update();
+        Check(player.cosmetics.hat.Hat!.ProductId.EndsWith("EvilHero"),"smooth 64bit still yields to a hero costume");
+    }
+    Check(player.cosmetics.hat.Hat!.ProductId.EndsWith("BitCharacter64"),"hero expiry resumes 64bit");
+}
+Check(player.cosmetics.hat.Hat!.ProductId=="original-hat" && !player.Body.forceRenderingOff,"64bit expiry restores original wardrobe/body");
+Console.WriteLine("PASS bit stages: exact boundaries, pauses, final restore, multiple holders and costume priority/lifetime/wardrobe/motion restoration");

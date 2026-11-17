@@ -30,7 +30,7 @@ Check(!AddonLinkWire.Valid(valid, 42, new string('b',32), now, ref sequence), "o
 Check(!AddonLinkWire.Valid(valid, 42, token, now + 501, ref sequence), "stale command rejected");
 Check(sequence == 0, "invalid input does not consume sequence");
 AddonLinkState.Reset();
-Check(AddonLinkState.Snapshot(now).Count == 11, "all channels always present");
+Check(AddonLinkState.Snapshot(now).Count == 12, "all channels always present");
 AddonLinkState.Update("heroes", "{\"players\":[{\"playerId\":1,\"kind\":\"super\"}]}");
 Check(AddonLinkState.Snapshot(Now())["heroes"].GetArrayLength() == 1, "registry accepts publisher envelope");
 Check(AddonLinkState.Snapshot(Now() + 1001)["heroes"].GetArrayLength() == 0, "expired heartbeat clears effects");

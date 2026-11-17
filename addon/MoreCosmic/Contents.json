@@ -48,6 +48,222 @@
         "Length": 8,
         "AnimSync": 1
       }
+    },
+    {
+      "Name": "BitCharacter2",
+      "Author": "TanukiBCL",
+      "Package": "TanukiBits",
+      "IsHidden": true,
+      "Adaptive": false,
+      "Bounce": false,
+      "HideHands": true,
+      "FPS": 1,
+      "Main": {
+        "Address": "tWg4uMeMb/FipNRBBkb/Main.png"
+      },
+      "Move": {
+        "AnimSync": 1,
+        "Length": 8,
+        "Address": "tWg4uMeMb/FipNRBBkb/Move.png"
+      },
+      "Climb": {
+        "AnimSync": 1,
+        "Length": 2,
+        "Address": "tWg4uMeMb/FipNRBBkb/Climb.png"
+      },
+      "ClimbDown": {
+        "Length": 1,
+        "Address": "tWg4uMeMb/FipNRBBkb/ClimbDown.png"
+      },
+      "EnterVent": {
+        "Address": "tWg4uMeMb/FipNRBBkb/EnterVent.png"
+      },
+      "ExitVent": {
+        "Address": "tWg4uMeMb/FipNRBBkb/EnterVent.png"
+      },
+      "Exile": {
+        "Address": "tWg4uMeMb/FipNRBBkb/Main.png"
+      }
+    },
+    {
+      "Name": "BitCharacter4",
+      "Author": "TanukiBCL",
+      "Package": "TanukiBits",
+      "IsHidden": true,
+      "Adaptive": true,
+      "Bounce": false,
+      "HideHands": true,
+      "FPS": 1,
+      "Main": {
+        "Address": "tWg4uMeMb/HipNRBBkb/Main.png"
+      },
+      "Move": {
+        "AnimSync": 1,
+        "Length": 8,
+        "Address": "tWg4uMeMb/HipNRBBkb/Move.png"
+      },
+      "Climb": {
+        "AnimSync": 1,
+        "Length": 2,
+        "Address": "tWg4uMeMb/HipNRBBkb/Climb.png"
+      },
+      "ClimbDown": {
+        "Length": 1,
+        "Address": "tWg4uMeMb/HipNRBBkb/ClimbDown.png"
+      },
+      "EnterVent": {
+        "Address": "tWg4uMeMb/HipNRBBkb/EnterVent.png"
+      },
+      "ExitVent": {
+        "Address": "tWg4uMeMb/HipNRBBkb/EnterVent.png"
+      },
+      "Exile": {
+        "Address": "tWg4uMeMb/HipNRBBkb/Main.png"
+      }
+    },
+    {
+      "Name": "BitCharacter8",
+      "Author": "TanukiBCL",
+      "Package": "TanukiBits",
+      "IsHidden": true,
+      "Adaptive": true,
+      "Bounce": false,
+      "HideHands": true,
+      "FPS": 1,
+      "Main": {
+        "Address": "tWg4uMeMb/LipNRBBkb/Main.png"
+      },
+      "Move": {
+        "AnimSync": 1,
+        "Length": 8,
+        "Address": "tWg4uMeMb/LipNRBBkb/Move.png"
+      },
+      "Climb": {
+        "AnimSync": 1,
+        "Length": 2,
+        "Address": "tWg4uMeMb/LipNRBBkb/Climb.png"
+      },
+      "ClimbDown": {
+        "Length": 1,
+        "Address": "tWg4uMeMb/LipNRBBkb/ClimbDown.png"
+      },
+      "EnterVent": {
+        "Address": "tWg4uMeMb/LipNRBBkb/EnterVent.png"
+      },
+      "ExitVent": {
+        "Address": "tWg4uMeMb/LipNRBBkb/EnterVent.png"
+      },
+      "Exile": {
+        "Address": "tWg4uMeMb/LipNRBBkb/Main.png"
+      }
+    },
+    {
+      "Name": "BitCharacter16",
+      "Author": "TanukiBCL",
+      "Package": "TanukiBits",
+      "IsHidden": true,
+      "Adaptive": true,
+      "Bounce": false,
+      "HideHands": true,
+      "FPS": 1,
+      "Main": {
+        "Address": "tWg4uMeMb/Uz064PjQ/Main.png"
+      },
+      "Move": {
+        "AnimSync": 1,
+        "Length": 8,
+        "Address": "tWg4uMeMb/Uz064PjQ/Move.png"
+      },
+      "Climb": {
+        "AnimSync": 1,
+        "Length": 2,
+        "Address": "tWg4uMeMb/Uz064PjQ/Climb.png"
+      },
+      "ClimbDown": {
+        "Length": 1,
+        "Address": "tWg4uMeMb/Uz064PjQ/ClimbDown.png"
+      },
+      "EnterVent": {
+        "Address": "tWg4uMeMb/Uz064PjQ/EnterVent.png"
+      },
+      "ExitVent": {
+        "Address": "tWg4uMeMb/Uz064PjQ/EnterVent.png"
+      },
+      "Exile": {
+        "Address": "tWg4uMeMb/Uz064PjQ/Main.png"
+      }
+    },
+    {
+      "Name": "BitCharacter32",
+      "Author": "TanukiBCL",
+      "Package": "TanukiBits",
+      "IsHidden": true,
+      "Adaptive": true,
+      "Bounce": false,
+      "HideHands": true,
+      "FPS": 1,
+      "Main": {
+        "Address": "tWg4uMeMb/UO064PjQ/Main.png"
+      },
+      "Move": {
+        "AnimSync": 1,
+        "Length": 8,
+        "Address": "tWg4uMeMb/UO064PjQ/Move.png"
+      },
+      "Climb": {
+        "AnimSync": 1,
+        "Length": 2,
+        "Address": "tWg4uMeMb/UO064PjQ/Climb.png"
+      },
+      "ClimbDown": {
+        "Length": 1,
+        "Address": "tWg4uMeMb/UO064PjQ/ClimbDown.png"
+      },
+      "EnterVent": {
+        "Address": "tWg4uMeMb/UO064PjQ/EnterVent.png"
+      },
+      "ExitVent": {
+        "Address": "tWg4uMeMb/UO064PjQ/EnterVent.png"
+      },
+      "Exile": {
+        "Address": "tWg4uMeMb/UO064PjQ/Main.png"
+      }
+    },
+    {
+      "Name": "BitCharacter64",
+      "Author": "TanukiBCL",
+      "Package": "TanukiBits",
+      "IsHidden": true,
+      "Adaptive": true,
+      "Bounce": false,
+      "HideHands": true,
+      "FPS": 1,
+      "Main": {
+        "Address": "tWg4uMeMb/xb164PjQ/Main.png"
+      },
+      "Move": {
+        "AnimSync": 1,
+        "Length": 8,
+        "Address": "tWg4uMeMb/xb164PjQ/Move.png"
+      },
+      "Climb": {
+        "AnimSync": 1,
+        "Length": 2,
+        "Address": "tWg4uMeMb/xb164PjQ/Climb.png"
+      },
+      "ClimbDown": {
+        "Length": 1,
+        "Address": "tWg4uMeMb/xb164PjQ/ClimbDown.png"
+      },
+      "EnterVent": {
+        "Address": "tWg4uMeMb/xb164PjQ/EnterVent.png"
+      },
+      "ExitVent": {
+        "Address": "tWg4uMeMb/xb164PjQ/EnterVent.png"
+      },
+      "Exile": {
+        "Address": "tWg4uMeMb/xb164PjQ/Main.png"
+      }
     }
   ],
   "Visors": [],
