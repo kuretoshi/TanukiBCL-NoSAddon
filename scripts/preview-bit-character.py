@@ -8,7 +8,7 @@ from PIL import Image, ImageDraw, ImageFont
 ROOT = Path(__file__).resolve().parent.parent
 DESIGN = ROOT / 'docs/design/bit-character'
 COSMIC = ROOT / 'addon/MoreCosmic'
-STAGES = [2, 4, 8, 16, 32, 64]
+STAGES = [2, 4, 8, 16, 32]
 PARTS = ['Main', 'Move', 'Climb', 'ClimbDown', 'EnterVent']
 
 
@@ -34,7 +34,8 @@ def tint(image):
 def load_assets():
     contents = json.loads((COSMIC / 'Contents.json').read_text(encoding='utf-8-sig'))
     previous = json.loads(subprocess.check_output(['git', '-c', 'safe.directory=' + ROOT.as_posix(), '-C', str(ROOT), 'show', 'HEAD:addon/MoreCosmic/Contents.json'], text=True))
-    assert contents['Hats'][:2] == previous['Hats'], 'existing hero definitions preserved'
+    assert contents['Hats'][:2] == previous['Hats'][:2], 'existing hero definitions preserved'
+    assert 'BitCharacter64' not in {h['Name'] for h in contents['Hats']}, '64bit removed from playable costumes'
     hats = {hat['Name']: hat for hat in contents['Hats']}
     images = {}
     for stage in STAGES:
@@ -64,7 +65,7 @@ def load_assets():
             if part == 'Climb':
                 assert frames[0].tobytes() != frames[1].tobytes(), 'alternating hand/leg poses'
             images[(stage, part)] = image if stage == 2 else tint(image)
-    print('PASS sprite assets: six stages, smooth 64bit alpha, preserved heroes, eight stable walks, two-frame ascent, dedicated descent, adaptive flags and no clipping')
+    print('PASS sprite assets: five stages, no 64bit costume, preserved heroes, eight walk source poses, two-frame ascent, dedicated descent, adaptive flags and no clipping')
     return images
 
 
@@ -91,7 +92,7 @@ def draw_preview(images):
             board.paste(tile, (x+2, y+1), tile)
             if col == 0:
                 draw.text((31, y+101), labels[row], font=font(17), fill='#dce9f5', anchor='mm', direction=None)
-    draw.text((32, 1525), '2→4→8→16→32→64bit→本人の元の衣装・通常アニメーションに戻ります。', font=font(23, True), fill='#f0f8ff')
+    draw.text((32, 1525), '2→4→8→16→32bit→本人の元の衣装・通常アニメーションに戻ります。', font=font(23, True), fill='#f0f8ff')
     board.save(DESIGN / 'animations-preview.png', optimize=True)
     frames = []
     for index in range(8):
@@ -110,15 +111,15 @@ def draw_preview(images):
 def draw_stage_table(images):
     # The final column is a real NoS body template, not a generated 64bit pose.
     original = tint(Image.open(ROOT / 'docs/design/hero-costumes-v2/reference/main.png').convert('RGBA'))
-    board = Image.new('RGB', (1530, 685), '#111b28')
+    board = Image.new('RGB', (1325, 685), '#111b28')
     draw = ImageDraw.Draw(board)
-    draw.text((30, 20), 'bitキャラクター：2〜64bit＋元の姿', font=font(34, True), fill='#f0f8ff')
-    draw.text((32, 77), '2→4→8→16→32→64bit→元の姿 ／ 素材の比較表（ゲーム画面ではありません）', font=font(20), fill='#b9c8da')
-    looks = ['白黒・粗いドット', '大きなドット', 'レトロなドット', '細かなドット', 'さらに精細', '滑らかな専用画像', '本人の元の衣装']
-    voices = ['最も粗い', '粗め', 'レトロ', 'やや鮮明', '鮮明', '高音質', '通常・加工なし']
-    for col in range(7):
+    draw.text((30, 20), 'bitキャラクター：2〜32bit＋元の姿', font=font(34, True), fill='#f0f8ff')
+    draw.text((32, 77), '2→4→8→16→32bit→元の姿 ／ 制作素材の比較表（ゲーム画面ではありません）', font=font(20), fill='#b9c8da')
+    looks = ['白黒・粗いドット', '大きなドット', 'レトロなドット', '細かなドット', 'さらに精細', '本人の元の衣装']
+    voices = ['最も粗い', '粗め', 'レトロ', 'やや鮮明', '鮮明', '通常・加工なし']
+    for col in range(len(STAGES)+1):
         x, center = 70+col*205, 160+col*205
-        final = col == 6
+        final = col == len(STAGES)
         title = '元の姿' if final else str(STAGES[col])+'bit'
         draw.text((center, 132), title, font=font(25, True), fill='#a3efc9' if final else '#75e5ef', anchor='mm')
         draw.rounded_rectangle((x-5, 158, x+190, 551), radius=12, fill='#233d3f' if final else '#223044')
@@ -130,7 +131,7 @@ def draw_stage_table(images):
         draw.text((center, 465), voices[col], font=font(20), fill='#d8e7f1', anchor='mm')
         draw.text((center, 521), 'その姿を維持' if final else '5〜180秒', font=font(19), fill='#d8e7f1', anchor='mm')
     for y in [382, 438, 494]:
-        draw.line((65, y, 1490, y), fill='#456074', width=1)
+        draw.line((65, y, 1285, y), fill='#456074', width=1)
     for label, y in [('見た目', 409), ('声', 465), ('時間', 521)]:
         draw.text((31, y), label, font=font(17), fill='#dce9f5', anchor='mm')
     draw.text((30, 585), '※「元の姿」の画像は無装飾の例です。実際は本人の色・帽子・服・バイザーに戻ります。', font=font(21), fill='#d8e7f1')

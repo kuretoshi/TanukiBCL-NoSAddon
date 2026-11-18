@@ -1,12 +1,12 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup><OutputType>Exe</OutputType><TargetFramework>net8.0</TargetFramework><ImplicitUsings>enable</ImplicitUsings><Nullable>enable</Nullable><EnableDefaultCompileItems>false</EnableDefaultCompileItems></PropertyGroup>
   <ItemGroup>
-    <Compile Include="Program.cs.txt" /><Compile Include="CostumeStubs.cs.txt" />
+    <Compile Include="Program.cs.txt" /><Compile Include="CostumeStubs.cs.txt" /><Compile Include="NativeVisualTests.cs.txt" />
     <Compile Include="../../addon/Scripts/BitCharacterProgress.cs" Link="BitCharacterProgress.cs" />
     <Compile Include="../../addon/Scripts/BitCharacterBroadcast.cs" Link="BitCharacterBroadcast.cs" />
     <Compile Include="../../addon/Scripts/AddonLinkState.cs" Link="AddonLinkState.cs" />
     <Compile Include="../../addon/Scripts/HeroCostume.cs" Link="HeroCostume.cs" />
     <Compile Include="../../addon/Scripts/BitCharacterMotion.cs" Link="BitCharacterMotion.cs" />
-    <Compile Include="../../addon/Scripts/BitCharacterShadow.cs" Link="BitCharacterShadow.cs" />
+    <Compile Include="../../addon/Scripts/BitCharacterNativeVisual.cs" Link="BitCharacterNativeVisual.cs" />
   </ItemGroup>
 </Project>

@@ -11,7 +11,7 @@ public static class BitCharacterBroadcast
     private static long lastWrite;
     public static void Set(byte player, int stage)
     {
-        if (stage < 0 || stage > BitCharacterProgress.FinalStage) return;
+        if (!BitCharacterProgress.IsValidStage(stage)) return;
         bool changed = !players.TryGetValue(player, out int old) || old != stage;
         players[player] = stage;
         Publish(changed);

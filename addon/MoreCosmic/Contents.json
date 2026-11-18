@@ -228,42 +228,6 @@
       "Exile": {
         "Address": "tWg4uMeMb/UO064PjQ/Main.png"
       }
-    },
-    {
-      "Name": "BitCharacter64",
-      "Author": "TanukiBCL",
-      "Package": "TanukiBits",
-      "IsHidden": true,
-      "Adaptive": true,
-      "Bounce": false,
-      "HideHands": true,
-      "FPS": 1,
-      "Main": {
-        "Address": "tWg4uMeMb/xb164PjQ/Main.png"
-      },
-      "Move": {
-        "AnimSync": 1,
-        "Length": 8,
-        "Address": "tWg4uMeMb/xb164PjQ/Move.png"
-      },
-      "Climb": {
-        "AnimSync": 1,
-        "Length": 2,
-        "Address": "tWg4uMeMb/xb164PjQ/Climb.png"
-      },
-      "ClimbDown": {
-        "Length": 1,
-        "Address": "tWg4uMeMb/xb164PjQ/ClimbDown.png"
-      },
-      "EnterVent": {
-        "Address": "tWg4uMeMb/xb164PjQ/EnterVent.png"
-      },
-      "ExitVent": {
-        "Address": "tWg4uMeMb/xb164PjQ/EnterVent.png"
-      },
-      "Exile": {
-        "Address": "tWg4uMeMb/xb164PjQ/Main.png"
-      }
     }
   ],
   "Visors": [],

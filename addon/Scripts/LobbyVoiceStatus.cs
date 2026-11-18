@@ -95,7 +95,8 @@ public static class LobbyVoiceStatus
         string key = !connected ? "disconnected"
             : version == null ? "unknownVersion" : "outdated";
         if (connected && fromHost) key += "Host";
-        notice.text = string.Format(NebulaAPI.Language.Translate("tanuki.lobbyVoice." + key), version ?? "");
+        notice.text = string.Format(NebulaAPI.Language.Translate("tanuki.lobbyVoice." + key),
+            version ?? "", VoiceVersionRequirement.Minimum);
         notice.gameObject.SetActive((!connected || !VoiceVersionRequirement.IsSupported(version)) &&
             clock.Elapsed.TotalSeconds - entered >= 3);
     }

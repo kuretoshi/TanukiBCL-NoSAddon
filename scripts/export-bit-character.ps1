@@ -10,7 +10,6 @@ $taskImages = [ordered]@{
     '8'='exec-222500ef-06a2-45ad-873c-a2637dce5c17.png'
     '16'='exec-36223556-2bd4-4d8e-8cdd-ed6c9408258c.png'
     '32'='exec-2eb39c20-59a8-491b-8227-c8e5a458df25.png'
-    '64'='exec-59e92a83-d9dc-427b-9b4e-4ba529a71fbe.png'
 }
 foreach ($taskStage in $taskImages.Keys) {
     $taskTarget = Join-Path $taskSource "$($taskStage)bit.png"

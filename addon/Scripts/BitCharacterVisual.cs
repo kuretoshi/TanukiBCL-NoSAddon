@@ -16,7 +16,8 @@ public sealed class BitCharacterVisual : IDisposable
     private static Sprite? icon;
     private readonly HeroCostume costume;
     private readonly PlayerControl vanilla;
-    private readonly string hatId;
+    private readonly int bits;
+    private BitCharacterNativeVisual? meetingVisual;
     private PoolablePlayer? meetingAvatar;
     private int meetingId;
     private readonly Dictionary<int, (SpriteRenderer renderer, bool hidden)> meetingOriginals = new();
@@ -24,8 +25,8 @@ public sealed class BitCharacterVisual : IDisposable
     {
         vanilla = PlayerControl.AllPlayerControls.ToArray().FirstOrDefault(p => p.PlayerId == player.PlayerId && p.Data != null)
             ?? throw new InvalidOperationException("Bit character player is not available.");
-        hatId = CosmicHat.IdToProductId("TanukiBCL_BitCharacter" + BitCharacterProgress.Bits[stage]);
-        costume = new HeroCostume(vanilla, "BitCharacter" + BitCharacterProgress.Bits[stage], stage < 5);
+        bits = BitCharacterProgress.Bits[stage];
+        costume = new HeroCostume(vanilla, "BitCharacter" + bits, true);
     }
     private static Sprite LoadIcon()
     {
@@ -43,7 +44,7 @@ public sealed class BitCharacterVisual : IDisposable
     {
         var hud = MeetingHud.Instance;
         if (hud == null) { RestoreMeeting(); return; }
-        if (hud.GetInstanceID() == meetingId) return;
+        if (hud.GetInstanceID() == meetingId) { meetingVisual?.Update(true); return; }
         var area = hud.playerStates.ToArray().FirstOrDefault(p => p.PlayerId.Value == vanilla.PlayerId);
         if (area == null || area.PlayerIcon == null) return;
         RestoreMeeting();
@@ -51,7 +52,7 @@ public sealed class BitCharacterVisual : IDisposable
         var avatar = area.PlayerIcon;
         var layer = avatar.cosmetics;
         // Preserve NoS's anonymous/camouflaged meeting portrait.
-        if (layer.ColorId != vanilla.cosmetics.ColorId || !MoreCosmic.AllHats.TryGetValue(hatId, out var hat)) return;
+        if (layer.ColorId != vanilla.cosmetics.ColorId) return;
         meetingAvatar = avatar;
         foreach (var body in layer.bodySprites)
         {
@@ -62,10 +63,13 @@ public sealed class BitCharacterVisual : IDisposable
         }
         layer.SetSkin(CosmeticsLayer.EMPTY_SKIN_ID, layer.ColorId);
         layer.SetVisor(CosmeticsLayer.EMPTY_VISOR_ID, layer.ColorId);
-        layer.SetHat(hat.MyHat, layer.ColorId);
+        layer.SetHat(CosmeticsLayer.EMPTY_HAT_ID, layer.ColorId);
+        meetingVisual = new BitCharacterNativeVisual(layer, bits);
+        meetingVisual.Update(true);
     }
     private void RestoreMeeting()
     {
+        meetingVisual?.Dispose(); meetingVisual = null;
         foreach (var entry in meetingOriginals.Values)
             if (entry.renderer != null) entry.renderer.forceRenderingOff = entry.hidden;
         meetingOriginals.Clear();

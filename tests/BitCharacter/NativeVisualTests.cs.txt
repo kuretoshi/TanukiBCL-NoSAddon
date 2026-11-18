@@ -1,0 +1,123 @@
+using TanukiBCL.Roles;
+using UnityEngine;
+
+public static class NativeVisualTests
+{
+    private static void Check(bool valid,string message) {if(!valid)throw new Exception(message);}
+    private static SpriteRenderer View() => GameObject.shadows.Last(r=>r.gameObject.name=="TanukiBitNativeBody");
+    public static void Run()
+    {
+        foreach(int bits in BitCharacterProgress.Bits) TestStage(bits);
+        try {new BitCharacterNativeVisual(new PlayerControl(),64);throw new Exception("retired 64bit accepted");}catch(ArgumentOutOfRangeException){}
+        TestSharedCache();TestGpuCleanup();TestWalkTransitions();TestMeeting();
+        Console.WriteLine("PASS native bit motion: five stages, native strides/contact held at 2-8bit, 12 frames at 16/32bit, no extra bob/shadow, colors/masks/sorting/flip, state changes, hero priority and wardrobe restore");
+        Console.WriteLine("PASS native bit textures: stage-specific sampling, shared atlas cache, source state preserved, temporary GPU cleanup on success/failure, release after final user");
+    }
+    private static void TestStage(int bits)
+    {
+        var player=new PlayerControl();var body=player.Body;
+        var atlas=new Texture2D(2048,2048,TextureFormat.RGBA32,false){filterMode=FilterMode.Bilinear,
+            pixels=[new(12,20,10,220),new(240,3,4,255),new(20,201,40,255),new(20,3,231,120)]};
+        body.properties.SetColor(PlayerMaterial.BodyColor,new Color(.2f,.7f,.3f,1));
+        var frames=Enumerable.Range(0,12).Select(_=>new Sprite{texture=atlas}).ToArray();
+        var previousTarget=RenderTexture.active;bool previousSrgb=GL.sRGBWrite;
+        int beforeBlits=Graphics.Blits,beforeShadows=GameObject.shadows.Count(r=>r.gameObject.name=="TanukiBitGroundShadow");
+        using var costume=new HeroCostume(player,"BitCharacter"+bits,true);
+        var view=View();var seen=new HashSet<int>();
+        for(int i=0;i<12;i++)
+        {
+            body.sprite=frames[i];body.transform.localPosition=new(i*.01f,i%3*.12f,1);
+            body.flipX=i%2==0;body.flipY=i%3==0;body.sortingLayerID=12;body.sortingOrder=i;body.sortingGroupOrder=i+200;
+            body.color=new Color(1,1,1,.6f);body.maskInteraction=SpriteMaskInteraction.VisibleInsideMask;
+            player.MyPhysics.Animations.Animator.NormalizedTime=i/12f;
+            HeroCostume.AfterCosmeticsUpdate(player.cosmetics.GetInstanceID());
+            int expected=BitCharacterMotion.WalkFrame(i/12f,bits);
+            Check(view.enabled && ReferenceEquals(view.sprite,frames[expected]),"native pose/pivot forwarded; retro stages hold the stride until native contact");
+            Check(view.transform.parent==body.transform && view.transform.localPosition.x==0 && view.transform.localPosition.y==0,"native body transform owns the full motion; no synthetic bob");
+            Check(view.color.a==.6f && view.sharedMaterial==body.sharedMaterial && view.maskInteraction==body.maskInteraction,"live player colors, opacity and masks preserved");
+            Check(view.flipX==body.flipX && view.flipY==body.flipY && view.sortingOrder==i && view.sortingGroupOrder==i+200,"native flipping and sorting preserved");
+            Check(player.cosmetics.hat.SpriteSyncNode.enabled,"native animation node remains enabled");
+            seen.Add(view.sprite.GetInstanceID());
+        }
+        Check(seen.Count==(bits<=8?4:12),"four native retro poses; all 12 native poses at higher stages");
+        Check(Graphics.Blits-beforeBlits==1,"one shared atlas conversion, not one per frame");
+        var texture=view.properties.GetTexture(Shader.PropertyToID("_MainTex"));
+        int width=bits==2?128:bits==4?171:bits==8?256:bits==16?342:683;
+        Check(texture?.width==width,"each bit stage retains its own pixel sampling resolution");
+        var color=view.properties.GetColor(PlayerMaterial.BodyColor);
+        Check(bits==2?color.r==color.g && color.g==color.b && color.r==2f/3f:color.r==.2f && color.g==.7f,"2bit is grayscale; later stages preserve live player color");
+        Check(body.properties.GetColor(PlayerMaterial.BodyColor).r==.2f,"grayscale never modifies the shared source palette");
+        if(bits==2)
+        {
+            var mask=((Texture2D)texture!).pixels;
+            Check(mask[0].r==0 && mask[0].g==0 && mask[0].b==0 && mask[0].a==220,"dark outlines stay black and retain alpha");
+            Check(mask[1].r==255 && mask[1].g==0 && mask[2].g==255 && mask[3].b==255 && mask[3].a==120,"2bit uses only the four grayscale palette masks; shadow alpha retained");
+        }
+        Check(atlas.filterMode==FilterMode.Bilinear && RenderTexture.active==previousTarget && GL.sRGBWrite==previousSrgb,"source filter, render target and color space are restored");
+        Check(body.properties.GetTexture(Shader.PropertyToID("_MainTex"))==null && body.sprite.texture==atlas,"native source sprite and property block unchanged");
+        Check(GameObject.shadows.Count(r=>r.gameObject.name=="TanukiBitGroundShadow")==beforeShadows,"native baked shadow is not doubled by a custom shadow");
+        player.MyPhysics.Animations.running=false;player.MyPhysics.Animations.ladder=true;
+        var climb=new Sprite{texture=atlas};body.sprite=climb;costume.LateUpdate();Check(view.sprite==climb,"native ladder pose is forwarded");
+        body.color=new Color(1,1,1,0);costume.LateUpdate();Check(view.color.a==0,"invisibility hides native body and its shadow together");body.color=new Color(1,1,1,1);
+        body.enabled=false;costume.LateUpdate();Check(!view.enabled,"native disabled state respected");body.enabled=true;
+        player.Data.IsDead=true;costume.LateUpdate();Check(!view.enabled,"death hides bit body");player.Data.IsDead=false;
+        using(var hero=new HeroCostume(player,HeroKind.Super)){costume.LateUpdate();Check(!view.enabled,"hero appearance wins over native bit body");}
+        costume.LateUpdate();Check(view.enabled && player.cosmetics.hat.Hat!.ProductId==CosmeticsLayer.EMPTY_HAT_ID,"native bit body resumes after hero");
+        costume.Dispose();Check(view.gameObject.destroyed && !player.Body.forceRenderingOff && player.cosmetics.hat.Hat!.ProductId=="original-hat","native visual and original wardrobe restore cleanly");
+        if(texture!=null)Check(texture.destroyed,"cached texture released after last user");
+    }
+    private static void TestSharedCache()
+    {
+        var a=new PlayerControl();var b=new PlayerControl();
+        var atlas=new Texture2D(2048,2048,TextureFormat.RGBA32,false);a.Body.sprite=new(){texture=atlas};b.Body.sprite=new(){texture=atlas};
+        int before=Graphics.Blits;
+        using var first=new HeroCostume(a,"BitCharacter16",true);first.LateUpdate();var firstView=View();
+        using var second=new HeroCostume(b,"BitCharacter16",true);second.LateUpdate();var secondView=View();
+        int key=Shader.PropertyToID("_MainTex");var texture=firstView.properties.GetTexture(key)!;
+        Check(Graphics.Blits==before+1 && secondView.properties.GetTexture(key)==texture,"players share one stage atlas");
+        first.Dispose();Check(!texture.destroyed,"first departing player cannot dispose another player's atlas");
+        second.LateUpdate();Check(secondView.enabled,"remaining player still renders");second.Dispose();Check(texture.destroyed,"last player releases atlas");
+    }
+    private static void TestGpuCleanup()
+    {
+        var player=new PlayerControl();var atlas=player.Body.sprite.texture;atlas.filterMode=FilterMode.Bilinear;
+        var target=RenderTexture.active;bool srgb=GL.sRGBWrite;
+        using var costume=new HeroCostume(player,"BitCharacter16",true);
+        Graphics.Throw=true;
+        try {costume.LateUpdate();throw new Exception("expected injected failure");}
+        catch(InvalidOperationException) { }
+        finally {Graphics.Throw=false;}
+        Check(atlas.filterMode==FilterMode.Bilinear && RenderTexture.active==target && GL.sRGBWrite==srgb && RenderTexture.temporaries.Last().destroyed,"GPU failure restores global state and releases temporary target");
+    }
+    private static void TestWalkTransitions()
+    {
+        var player=new PlayerControl();var body=player.Body;
+        var first=new Sprite();body.sprite=first;
+        using var costume=new HeroCostume(player,"BitCharacter2",true);costume.LateUpdate();var view=View();
+        var next=new Sprite{texture=first.texture};body.sprite=next;
+        player.MyPhysics.Animations.Animator.NormalizedTime=.1f;
+        costume.LateUpdate();Check(view.sprite==first,"running frame is held within the same stride");
+        player.MyPhysics.Animations.running=false;costume.LateUpdate();Check(view.sprite==next,"stopping immediately returns to native idle without a held foot");
+        player.MyPhysics.Animations.running=true;body.sprite=first;costume.LateUpdate();Check(view.sprite==first,"restart captures current native pose");
+        body.sprite=next;player.MyPhysics.Animations.Animator.NormalizedTime=1.1f;costume.LateUpdate();Check(view.sprite==next,"next cycle refreshes even at the same within-cycle phase");
+        body.sprite=first;player.MyPhysics.Animations.running=false;player.MyPhysics.Animations.ladder=true;
+        costume.LateUpdate();Check(view.sprite==first,"ladder releases the retro frame immediately");
+        player.MyPhysics.Animations.ladder=false;player.MyPhysics.Animations.running=true;body.sprite=next;
+        costume.LateUpdate();Check(view.sprite==next,"walking resumes from current pose after climbing");
+        player.MyPhysics.Animations.Animator.NormalizedTime=float.NaN;body.sprite=first;
+        costume.LateUpdate();Check(view.sprite==first,"invalid animation time cannot stick a held pose");
+        player.MyPhysics.Animations.Animator.NormalizedTime=0;body.sprite=next;costume.LateUpdate();
+        using(var hero=new HeroCostume(player,HeroKind.Super)){costume.LateUpdate();Check(!view.enabled,"hero suppresses the held native body");body.sprite=first;}
+        costume.LateUpdate();Check(view.sprite==first && view.enabled,"hero expiry captures a fresh current pose");
+    }
+    private static void TestMeeting()
+    {
+        var layer=new CosmeticsLayer();var first=new Sprite();layer.currentBodySprite.BodySprite.sprite=first;
+        layer.currentBodySprite.BodySprite.maskInteraction=SpriteMaskInteraction.VisibleInsideMask;
+        using var visual=new BitCharacterNativeVisual(layer,4);visual.Update(true);var view=View();
+        Check(view.sprite==first && view.maskInteraction==SpriteMaskInteraction.VisibleInsideMask,"meeting avatar uses the native body and its UI mask");
+        var next=new Sprite{texture=first.texture};layer.currentBodySprite.BodySprite.sprite=next;visual.Update(true);
+        Check(view.sprite==next,"meeting avatars have no walking hold");
+        visual.Dispose();Check(!view.enabled && view.gameObject.destroyed,"meeting native renderer is released");
+    }
+}

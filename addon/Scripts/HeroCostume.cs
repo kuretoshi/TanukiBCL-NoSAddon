@@ -10,15 +10,16 @@ namespace TanukiBCL.Roles;
 public sealed class HeroCostume : IDisposable
 {
     private static readonly Dictionary<int, List<HeroCostume>> owners = new();
+    private static readonly Dictionary<int, int> layerOwners = new();
     private readonly Dictionary<int, (SpriteRenderer renderer, bool hidden)> originals;
-    private readonly int ownerId, priority;
+    private readonly int ownerId, priority, layerId, bitDepth;
     private readonly PlayerControl vanilla;
     private readonly CosmicHat hat;
     private readonly Transform? handSlot;
     private readonly PowerTools.SpriteAnimNodeSync? motionNode;
     private readonly bool motionEnabled;
     private readonly bool bitCostume;
-    private readonly BitCharacterShadow? groundShadow;
+    private readonly BitCharacterNativeVisual? nativeBody;
     private bool disposed;
     private float nextCheck;
     private int walkSamples;
@@ -37,19 +38,28 @@ public sealed class HeroCostume : IDisposable
         motionNode = vanilla.cosmetics.hat.SpriteSyncNode;
         motionEnabled = motionNode != null && motionNode.enabled;
         bitCostume = name.StartsWith("BitCharacter", StringComparison.Ordinal);
+        bitDepth = bitCostume && int.TryParse(name.Substring("BitCharacter".Length), out var depth) ? depth : 0;
         ownerId = vanilla.GetInstanceID(); priority = bitCostume ? 10 : 100;
+        layerId = vanilla.cosmetics.GetInstanceID();
         if (!owners.TryGetValue(ownerId, out var group)) { group = new(); owners.Add(ownerId, group); }
         originals = group.Count == 0 ? new() : group[0].originals;
         if (group.Count > 0) motionEnabled = group[0].motionEnabled;
         group.Add(this);
+        layerOwners[layerId] = ownerId;
         try
         {
-            if (bitCostume) { PrepareBitTextures(pixelated); groundShadow = new BitCharacterShadow(vanilla); }
+            if (bitCostume) nativeBody = new BitCharacterNativeVisual(vanilla, bitDepth);
             if (IsActive) { Apply(); Update(); }
         }
         catch { Dispose(); throw; }
     }
     private bool IsActive => ReferenceEquals(ActiveOwner(ownerId), this);
+    internal static void AfterCosmeticsUpdate(int id)
+    {
+        if (!layerOwners.TryGetValue(id, out var owner)) return;
+        var active = ActiveOwner(owner);
+        if (active?.bitCostume == true) active.LateUpdate();
+    }
     private static HeroCostume? ActiveOwner(int id)
     {
         if (!owners.TryGetValue(id, out var group)) return null;
@@ -58,22 +68,16 @@ public sealed class HeroCostume : IDisposable
             if (!owner.disposed && (active == null || owner.priority >= active.priority)) active = owner;
         return active;
     }
-    private void PrepareBitTextures(bool pixelated)
-    {
-        foreach (var image in new[] { hat.Main, hat.Move, hat.Climb, hat.ClimbDown, hat.EnterVent, hat.ExitVent, hat.Exile })
-        {
-            var sprite = image?.GetSprite(0);
-            if (sprite != null) sprite.texture.filterMode = pixelated ? FilterMode.Point : FilterMode.Bilinear;
-        }
-    }
     private void Apply()
     {
         var layer = vanilla.cosmetics;
         int color = layer.ColorId;
         layer.SetSkin(CosmeticsLayer.EMPTY_SKIN_ID, color);
         layer.SetVisor(CosmeticsLayer.EMPTY_VISOR_ID, color);
-        layer.SetHat(hat.MyHat, color);
-        Virial.NebulaAPI.Logging.NebulaLogger("TanukiHero").Message("MoreCosmic costume applied: " + hat.ProductId);
+        if (nativeBody == null) layer.SetHat(hat.MyHat, color);
+        else layer.SetHat(CosmeticsLayer.EMPTY_HAT_ID, color);
+        Virial.NebulaAPI.Logging.NebulaLogger("TanukiHero").Message(
+            (nativeBody == null ? "MoreCosmic costume applied: " : "Native bit body applied: ") + hat.ProductId);
     }
     public void Update()
     {
@@ -86,15 +90,16 @@ public sealed class HeroCostume : IDisposable
         if (Time.unscaledTime < nextCheck) return;
         nextCheck = Time.unscaledTime + .1f;
         var layer = vanilla.cosmetics;
-        if (layer.hat.Hat == null || layer.hat.Hat.ProductId != hat.ProductId) Apply();
+        string expected = nativeBody == null ? hat.ProductId : CosmeticsLayer.EMPTY_HAT_ID;
+        if (layer.hat.Hat == null || layer.hat.Hat.ProductId != expected) Apply();
     }
     public void LateUpdate()
     {
-        if (!disposed) groundShadow?.Update(IsActive);
+        if (!disposed) nativeBody?.Update(IsActive);
         if (disposed || !IsActive || vanilla == null || vanilla.MyPhysics == null) return;
+        if (nativeBody != null) { RestoreMotion(); return; }
         // Even the no-bounce hat node moves vertically through the run cycle.
-        // Anchor full-body artwork at the stationary origin; bit costumes add
-        // a small run-frame-synchronized step instead of the large hat bounce.
+        // Anchor the hero's full-body artwork at the stationary origin.
         // Release the native node immediately for idle, ladder and vent states.
         if (!vanilla.MyPhysics.Animations.IsPlayingRunAnimation())
         {
@@ -109,7 +114,6 @@ public sealed class HeroCostume : IDisposable
         // NoS's normal idle cosmetic node is at y=.575 (also used by its fixed
         // visor). defaultHatVisorPosition is zero in-game, not that idle origin.
         var position = new Vector3(0f, .575f, 0f) + (layer.FlipX ? motionNode.flipOffset : motionNode.normalOffset);
-        if (bitCostume) position.y += BitCharacterMotion.WalkOffset(vanilla.MyPhysics.Animations.Animator.NormalizedTime);
         position.z = layer.hat.transform.localPosition.z;
         layer.hat.transform.localPosition = position;
         layer.hat.transform.localRotation = Quaternion.identity;
@@ -137,11 +141,12 @@ public sealed class HeroCostume : IDisposable
         if (disposed) return;
         bool active = IsActive;
         disposed = true;
-        groundShadow?.Dispose();
+        nativeBody?.Dispose();
         if (owners.TryGetValue(ownerId, out var group)) group.Remove(this);
         var next = ActiveOwner(ownerId);
         if (next != null) { if (active) next.Apply(); return; }
         owners.Remove(ownerId);
+        layerOwners.Remove(layerId);
         RestoreMotion();
         if (walkSamples > 0)
             Virial.NebulaAPI.Logging.NebulaLogger("TanukiHero").Message($"Walk: {hat.ProductId}, samples={walkSamples}, moveFrames={walkFrames.Count}, attachmentY={walkMinY:F4}..{walkMaxY:F4}");

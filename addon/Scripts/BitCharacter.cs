@@ -17,7 +17,6 @@ public sealed class BitCharacter : DefinedAllocatableModifierTemplate, DefinedAl
     private static readonly FloatConfiguration Eight = Duration("8");
     private static readonly FloatConfiguration Sixteen = Duration("16");
     private static readonly FloatConfiguration ThirtyTwo = Duration("32");
-    private static readonly FloatConfiguration SixtyFour = Duration("64");
     private static FloatConfiguration Duration(string stage) => NebulaAPI.Configurations.Configuration(
         "options.role.tanukiBitCharacter.seconds" + stage, (5f, 180f, 5f), 30f);
     public static readonly BitCharacter MyRole = new();
@@ -25,7 +24,7 @@ public sealed class BitCharacter : DefinedAllocatableModifierTemplate, DefinedAl
         if (data.player.TryGetModifier<Instance>(out var modifier)) modifier.ChangeStage(data.stage);
     });
     private BitCharacter() : base("tanukiBitCharacter", "TBIT", new Virial.Color(155, 210, 235),
-        new IConfiguration[] { Two, Four, Eight, Sixteen, ThirtyTwo, SixtyFour })
+        new IConfiguration[] { Two, Four, Eight, Sixteen, ThirtyTwo })
     {
         ConfigurationHolder!.Illustration = BitCharacterVisual.Icon;
         ConfigurationHolder.AddTags(AddonRoleTag.Tag);
@@ -42,7 +41,7 @@ public sealed class BitCharacter : DefinedAllocatableModifierTemplate, DefinedAl
         private int stage;
         private bool visible;
         private float nextTry;
-        public Instance(Player player) : base(player) => progress = new((float)Two, (float)Four, (float)Eight, (float)Sixteen, (float)ThirtyTwo, (float)SixtyFour);
+        public Instance(Player player) : base(player) => progress = new((float)Two, (float)Four, (float)Eight, (float)Sixteen, (float)ThirtyTwo);
         void RuntimeAssignable.DecorateNameConstantly(ref string name, bool canSeeAllInfo, bool inEndScene)
         {
             if ((AmOwner || canSeeAllInfo) && stage < BitCharacterProgress.FinalStage) name += " [" + BitCharacterProgress.Bits[stage] + "bit]";
@@ -50,7 +49,7 @@ public sealed class BitCharacter : DefinedAllocatableModifierTemplate, DefinedAl
         void RuntimeAssignable.OnActivated() => ChangeStage(0);
         public void ChangeStage(int next)
         {
-            if (next < stage || next < 0 || next > BitCharacterProgress.FinalStage) return;
+            if (next < stage || !BitCharacterProgress.IsValidStage(next)) return;
             if (next == stage && visible) return;
             stage = next;
             visual?.Dispose(); visual = null;

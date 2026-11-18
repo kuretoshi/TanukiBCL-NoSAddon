@@ -1,44 +1,60 @@
 namespace TanukiBCL.Roles { public enum HeroKind {Super,Evil} }
 namespace UnityEngine {
- public class Object {public static void Destroy(GameObject obj){obj.destroyed=true;}}
+ public class Object {public bool destroyed;public static void Destroy(Object obj){obj.destroyed=true;}}
  public class Obj:Object {static int next;readonly int id=++next;public int GetInstanceID()=>id;}
  public enum FilterMode {Point,Bilinear}
- public class Texture {public int width=2400;public FilterMode filterMode;}
+ public enum TextureWrapMode {Clamp}
+ public class Texture:Obj {public int width=2400,height=2048;public bool isDataSRGB=true;public FilterMode filterMode;public TextureWrapMode wrapMode;}
  public enum TextureFormat {RGBA32}
  public struct Rect(float x,float y,float w,float h) {public float x=x,y=y,w=w,h=h;}
  public struct Vector2(float x,float y) {public float x=x,y=y;}
  public struct Color32(byte r,byte g,byte b,byte a) {public byte r=r,g=g,b=b,a=a;}
  public struct Color(float r,float g,float b,float a) {public float r=r,g=g,b=b,a=a;}
- public class Texture2D:Texture {public int height;public TextureFormat format;public bool mipmaps;public Texture2D(int w,int h,TextureFormat f,bool mip){width=w;height=h;format=f;mipmaps=mip;}public Color32[] pixels=[];public void SetPixels32(Color32[] p)=>pixels=p;public void Apply(bool m,bool r){} }
- public class Sprite:Obj {public Texture texture=new();public static Sprite Create(Texture2D t,Rect r,Vector2 v,float p)=>new(){texture=t};}
- public struct Vector3(float x,float y,float z) {public float x=x,y=y,z=z;public static Vector3 operator+(Vector3 a,Vector3 b)=>new(a.x+b.x,a.y+b.y,a.z+b.z);}
+ public class Texture2D:Texture {public TextureFormat format;public bool mipmaps;public Texture2D(int w,int h,TextureFormat f,bool mip,bool linear=false){width=w;height=h;format=f;mipmaps=mip;isDataSRGB=!linear;}public Color32[] pixels=[];public Color32[] GetPixels32()=>(Color32[])pixels.Clone();public void SetPixels32(Color32[] p)=>pixels=p;public void ReadPixels(Rect r,int x,int y,bool mip){pixels=(Color32[])(RenderTexture.active?.samples.Clone() ?? Array.Empty<Color32>());}public void Apply(bool m,bool r){} }
+ public class Sprite:Obj {public Texture2D texture=new(2400,2048,TextureFormat.RGBA32,false);public static Sprite Create(Texture2D t,Rect r,Vector2 v,float p)=>new(){texture=t};}
+ public struct Vector3(float x,float y,float z) {public float x=x,y=y,z=z;public static Vector3 zero=>new();public static Vector3 one=>new(1,1,1);public static Vector3 operator+(Vector3 a,Vector3 b)=>new(a.x+b.x,a.y+b.y,a.z+b.z);}
+ public enum RenderTextureFormat {ARGB32} public enum RenderTextureReadWrite {sRGB,Linear}
+ public class RenderTexture:Texture {public Color32[] samples=[];public static RenderTexture? active;public static List<RenderTexture> temporaries=new();public static RenderTexture GetTemporary(int w,int h,int d,RenderTextureFormat f,RenderTextureReadWrite r){var t=new RenderTexture(){width=w,height=h};temporaries.Add(t);return t;}public static void ReleaseTemporary(RenderTexture t)=>t.destroyed=true;}
+ public static class Graphics {public static int Blits;public static bool Throw;public static void Blit(Texture s,RenderTexture t){Blits++;if(Throw)throw new InvalidOperationException("injected GPU failure");if(s is Texture2D image)t.samples=(Color32[])image.pixels.Clone();}}
+ public static class GL {public static bool sRGBWrite;}
+ public enum ColorSpace {Gamma,Linear}public static class QualitySettings {public static ColorSpace activeColorSpace=ColorSpace.Linear;}
+ public class Shader {public static int PropertyToID(string name)=>name.GetHashCode();}
+ public class Material:Obj {}
+ public enum SpriteMaskInteraction {None,VisibleInsideMask}
+ public class MaterialPropertyBlock {public Dictionary<int,Texture> textures=new();public Dictionary<int,Color> colors=new();public void SetTexture(int key,Texture t)=>textures[key]=t;public Texture? GetTexture(int key)=>textures.GetValueOrDefault(key);public void SetColor(int key,Color color)=>colors[key]=color;public Color GetColor(int key)=>colors.GetValueOrDefault(key);public void Copy(MaterialPropertyBlock from){textures=new(from.textures);colors=new(from.colors);}}
  public struct Quaternion {public static Quaternion identity=>new();}
- public class Transform {public Transform? parent;public Vector3 localPosition,localScale;public Quaternion localRotation;public void SetParent(Transform? p,bool world)=>parent=p;public Transform? Find(string name)=>null;public T[] GetComponentsInChildren<T>(bool active)=>[];}
- public class GameObject {public static List<SpriteRenderer> shadows=new();public bool activeInHierarchy=true,destroyed;public int layer;public Transform transform=new();public GameObject(string name=""){} public T AddComponent<T>() where T:SpriteRenderer,new(){var r=new T(){gameObject=this};shadows.Add(r);return r;}}
- public class SpriteRenderer:Obj {public GameObject gameObject=new();public Transform transform=>gameObject.transform;public bool forceRenderingOff,flipX,enabled=true;public int sortingLayerID,sortingOrder;public Color color=new(1,1,1,1);public Sprite sprite=new();}
+ public class Transform {
+  public Transform? parent;public Vector3 localPosition,localScale=new(1,1,1);public Quaternion localRotation;
+  public Vector3 lossyScale {get{var s=parent?.lossyScale ?? new Vector3(1,1,1);return new(localScale.x*s.x,localScale.y*s.y,localScale.z*s.z);}}
+  public Vector3 position {get{var p=parent?.position ?? new Vector3();var s=parent?.lossyScale ?? new Vector3(1,1,1);return new(p.x+localPosition.x*s.x,p.y+localPosition.y*s.y,p.z+localPosition.z*s.z);}set{var p=parent?.position ?? new Vector3();var s=parent?.lossyScale ?? new Vector3(1,1,1);localPosition=new((value.x-p.x)/s.x,(value.y-p.y)/s.y,(value.z-p.z)/s.z);}}
+  public void SetParent(Transform? p,bool world)=>parent=p;public Transform? Find(string name)=>null;public T[] GetComponentsInChildren<T>(bool active)=>[];
+ }
+ public class GameObject:Object {public static List<SpriteRenderer> shadows=new();public string name;public bool activeInHierarchy=true;public int layer;public Transform transform=new();public GameObject(string name=""){this.name=name;} public T AddComponent<T>() where T:SpriteRenderer,new(){var r=new T(){gameObject=this};shadows.Add(r);return r;}}
+ public class SpriteRenderer:Obj {public GameObject gameObject=new();public Transform transform=>gameObject.transform;public bool forceRenderingOff,flipX,flipY,enabled=true;public int sortingLayerID,sortingOrder,sortingGroupOrder;public Color color=new(1,1,1,1);public Sprite sprite=new();public Material sharedMaterial=new();public SpriteMaskInteraction maskInteraction;public MaterialPropertyBlock properties=new();public void GetPropertyBlock(MaterialPropertyBlock p)=>p.Copy(properties);public void SetPropertyBlock(MaterialPropertyBlock p)=>properties.Copy(p);}
  public static class Mathf {public static float Clamp01(float x)=>Math.Clamp(x,0,1);public static float Min(float a,float b)=>Math.Min(a,b);public static float Max(float a,float b)=>Math.Max(a,b);}
  public static class Time {public static float unscaledTime=>100;}
 }
 namespace PowerTools {public class SpriteAnimNodeSync {public bool enabled=true;public UnityEngine.Vector3 flipOffset,normalOffset;}public class SpriteAnim {public float NormalizedTime;public object Current=new();public object GetCurrentAnimation()=>Current;}}
 namespace Nebula.Modules.Cosmetics {
  public class Hat {public string ProductId="";}
- public class CosmicImage {readonly UnityEngine.Sprite sprite=new();public UnityEngine.Sprite GetSprite(int i)=>sprite;}
+ public class CosmicImage {readonly UnityEngine.Sprite[] sprites=Enumerable.Range(0,8).Select(_=>new UnityEngine.Sprite()).ToArray();public UnityEngine.Sprite GetSprite(int i)=>sprites[i];}
  public class CosmicHat(string name) {public CosmicImage Main=new(),Move=new(),Climb=new(),ClimbDown=new(),EnterVent=new(),ExitVent=new(),Exile=new();public string ProductId=>IdToProductId("TanukiBCL_"+name);public Hat MyHat=>new(){ProductId=ProductId};public static string IdToProductId(string id)=>"noshat_"+id;}
  public static class MoreCosmic {public static Dictionary<string,CosmicHat> AllHats=new();}
 }
 public class HatLayer {public Nebula.Modules.Cosmetics.Hat? Hat;public PowerTools.SpriteAnimNodeSync SpriteSyncNode=new();public UnityEngine.Transform transform=new();public UnityEngine.SpriteRenderer FrontLayer=new(),BackLayer=new();}
 public class BodyLayer {public UnityEngine.SpriteRenderer BodySprite=new();}
-public class CosmeticsLayer {
- public const string EMPTY_SKIN_ID="",EMPTY_VISOR_ID="";public int ColorId;public bool FlipX;public string Skin="original-skin",Visor="original-visor";
- public bool Visible=true;public HatLayer hat=new();public BodyLayer[] bodySprites=[new()];public BodyLayer currentBodySprite=>bodySprites[0];
+public class CosmeticsLayer:UnityEngine.Obj {
+ public const string EMPTY_SKIN_ID="",EMPTY_VISOR_ID="",EMPTY_HAT_ID="empty-hat";public int ColorId;public bool FlipX;public string Skin="original-skin",Visor="original-visor";
+ public bool Visible=true;public HatLayer hat=new();public BodyLayer[] bodySprites=[new()];public BodyLayer currentBodySprite=>bodySprites[0];public BodyLayer normalBodySprite=>bodySprites[0];
  public void SetHat(Nebula.Modules.Cosmetics.Hat h,int c)=>hat.Hat=h;
  public void SetHat(string id,int c)=>hat.Hat=new(){ProductId=id};
  public void SetSkin(string id,int c)=>Skin=id;public void SetVisor(string id,int c)=>Visor=id;
 }
 public class Outfit {public string HatId="original-hat",SkinId="original-skin",VisorId="original-visor";public int ColorId;}
+public static class PlayerMaterial {public const int BodyColor=1001,BackColor=1002,VisorColor=1003;}
 public class AnimationGroup {public object ExitVentAnim=new();}
 public class Animations {public bool running=true,ladder,enterVent;public PowerTools.SpriteAnim Animator=new();public AnimationGroup group=new();public bool IsPlayingRunAnimation()=>running;public bool IsPlayingAnyLadderAnimation()=>ladder;public bool IsPlayingEnterVentAnimation()=>enterVent;}
 public class Physics {public Animations Animations=new();}
 public class PlayerData {public bool IsDead;}
-public class PlayerControl:UnityEngine.Obj {public bool inVent;public CosmeticsLayer cosmetics=new();public UnityEngine.Transform transform=new();public Physics MyPhysics=new();public PlayerData Data=new();public Outfit CurrentOutfit=new();public UnityEngine.SpriteRenderer Body=>cosmetics.bodySprites[0].BodySprite;}
+public class PlayerControl:UnityEngine.Obj {public UnityEngine.Vector2 FootPosition=new(7,-3);public UnityEngine.Vector2 GetTruePosition()=>FootPosition;public bool inVent;public CosmeticsLayer cosmetics=new();public UnityEngine.Transform transform=new();public Physics MyPhysics=new();public PlayerData Data=new();public Outfit CurrentOutfit=new();public UnityEngine.SpriteRenderer Body=>cosmetics.bodySprites[0].BodySprite;}
 namespace Virial {public static class NebulaAPI {public static LoggingApi Logging=new();} public class LoggingApi {public Logger NebulaLogger(string name)=>new();}public class Logger {public void Message(string text){}}}
