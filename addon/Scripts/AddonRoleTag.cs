@@ -14,7 +14,7 @@ public static class AddonRoleTag
     public static readonly ConfigurationTag Tag = new(new WrapSpriteLoader(GetSprite), () =>
         NebulaAPI.GUI.LocalizedText(GUIAlignment.Left, NebulaAPI.GUI.GetAttribute(AttributeAsset.OverlayContent), "tanuki.roleTag.description"));
 
-    private static Sprite GetSprite()
+    internal static Sprite GetSprite()
     {
         if (sprite) return sprite!;
         using var stream = NebulaAPI.GetAddon("tanuki.bcl.roles")?.GetResource("DiscordContact.png")?.AsStream()

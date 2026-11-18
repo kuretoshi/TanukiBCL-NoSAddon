@@ -1,17 +1,25 @@
 namespace TanukiBCL.Roles { public enum HeroKind {Super,Evil} }
 namespace UnityEngine {
- public class Obj {static int next;readonly int id=++next;public int GetInstanceID()=>id;}
+ public class Object {public static void Destroy(GameObject obj){obj.destroyed=true;}}
+ public class Obj:Object {static int next;readonly int id=++next;public int GetInstanceID()=>id;}
  public enum FilterMode {Point,Bilinear}
  public class Texture {public int width=2400;public FilterMode filterMode;}
- public class Sprite:Obj {public Texture texture=new();}
+ public enum TextureFormat {RGBA32}
+ public struct Rect(float x,float y,float w,float h) {public float x=x,y=y,w=w,h=h;}
+ public struct Vector2(float x,float y) {public float x=x,y=y;}
+ public struct Color32(byte r,byte g,byte b,byte a) {public byte r=r,g=g,b=b,a=a;}
+ public struct Color(float r,float g,float b,float a) {public float r=r,g=g,b=b,a=a;}
+ public class Texture2D:Texture {public int height;public TextureFormat format;public bool mipmaps;public Texture2D(int w,int h,TextureFormat f,bool mip){width=w;height=h;format=f;mipmaps=mip;}public Color32[] pixels=[];public void SetPixels32(Color32[] p)=>pixels=p;public void Apply(bool m,bool r){} }
+ public class Sprite:Obj {public Texture texture=new();public static Sprite Create(Texture2D t,Rect r,Vector2 v,float p)=>new(){texture=t};}
  public struct Vector3(float x,float y,float z) {public float x=x,y=y,z=z;public static Vector3 operator+(Vector3 a,Vector3 b)=>new(a.x+b.x,a.y+b.y,a.z+b.z);}
  public struct Quaternion {public static Quaternion identity=>new();}
- public class Transform {public Vector3 localPosition,localScale;public Quaternion localRotation;public Transform? Find(string name)=>null;public T[] GetComponentsInChildren<T>(bool active)=>[];}
- public class SpriteRenderer:Obj {public bool forceRenderingOff,flipX;public Sprite sprite=new();}
- public static class Mathf {public static float Min(float a,float b)=>Math.Min(a,b);public static float Max(float a,float b)=>Math.Max(a,b);}
+ public class Transform {public Transform? parent;public Vector3 localPosition,localScale;public Quaternion localRotation;public void SetParent(Transform? p,bool world)=>parent=p;public Transform? Find(string name)=>null;public T[] GetComponentsInChildren<T>(bool active)=>[];}
+ public class GameObject {public static List<SpriteRenderer> shadows=new();public bool activeInHierarchy=true,destroyed;public int layer;public Transform transform=new();public GameObject(string name=""){} public T AddComponent<T>() where T:SpriteRenderer,new(){var r=new T(){gameObject=this};shadows.Add(r);return r;}}
+ public class SpriteRenderer:Obj {public GameObject gameObject=new();public Transform transform=>gameObject.transform;public bool forceRenderingOff,flipX,enabled=true;public int sortingLayerID,sortingOrder;public Color color=new(1,1,1,1);public Sprite sprite=new();}
+ public static class Mathf {public static float Clamp01(float x)=>Math.Clamp(x,0,1);public static float Min(float a,float b)=>Math.Min(a,b);public static float Max(float a,float b)=>Math.Max(a,b);}
  public static class Time {public static float unscaledTime=>100;}
 }
-namespace PowerTools {public class SpriteAnimNodeSync {public bool enabled=true;public UnityEngine.Vector3 flipOffset,normalOffset;}}
+namespace PowerTools {public class SpriteAnimNodeSync {public bool enabled=true;public UnityEngine.Vector3 flipOffset,normalOffset;}public class SpriteAnim {public float NormalizedTime;public object Current=new();public object GetCurrentAnimation()=>Current;}}
 namespace Nebula.Modules.Cosmetics {
  public class Hat {public string ProductId="";}
  public class CosmicImage {readonly UnityEngine.Sprite sprite=new();public UnityEngine.Sprite GetSprite(int i)=>sprite;}
@@ -22,13 +30,15 @@ public class HatLayer {public Nebula.Modules.Cosmetics.Hat? Hat;public PowerTool
 public class BodyLayer {public UnityEngine.SpriteRenderer BodySprite=new();}
 public class CosmeticsLayer {
  public const string EMPTY_SKIN_ID="",EMPTY_VISOR_ID="";public int ColorId;public bool FlipX;public string Skin="original-skin",Visor="original-visor";
- public HatLayer hat=new();public BodyLayer[] bodySprites=[new()];
+ public bool Visible=true;public HatLayer hat=new();public BodyLayer[] bodySprites=[new()];public BodyLayer currentBodySprite=>bodySprites[0];
  public void SetHat(Nebula.Modules.Cosmetics.Hat h,int c)=>hat.Hat=h;
  public void SetHat(string id,int c)=>hat.Hat=new(){ProductId=id};
  public void SetSkin(string id,int c)=>Skin=id;public void SetVisor(string id,int c)=>Visor=id;
 }
 public class Outfit {public string HatId="original-hat",SkinId="original-skin",VisorId="original-visor";public int ColorId;}
-public class Animations {public bool IsPlayingRunAnimation()=>true;}
+public class AnimationGroup {public object ExitVentAnim=new();}
+public class Animations {public bool running=true,ladder,enterVent;public PowerTools.SpriteAnim Animator=new();public AnimationGroup group=new();public bool IsPlayingRunAnimation()=>running;public bool IsPlayingAnyLadderAnimation()=>ladder;public bool IsPlayingEnterVentAnimation()=>enterVent;}
 public class Physics {public Animations Animations=new();}
-public class PlayerControl:UnityEngine.Obj {public CosmeticsLayer cosmetics=new();public UnityEngine.Transform transform=new();public Physics MyPhysics=new();public object Data=new();public Outfit CurrentOutfit=new();public UnityEngine.SpriteRenderer Body=>cosmetics.bodySprites[0].BodySprite;}
+public class PlayerData {public bool IsDead;}
+public class PlayerControl:UnityEngine.Obj {public bool inVent;public CosmeticsLayer cosmetics=new();public UnityEngine.Transform transform=new();public Physics MyPhysics=new();public PlayerData Data=new();public Outfit CurrentOutfit=new();public UnityEngine.SpriteRenderer Body=>cosmetics.bodySprites[0].BodySprite;}
 namespace Virial {public static class NebulaAPI {public static LoggingApi Logging=new();} public class LoggingApi {public Logger NebulaLogger(string name)=>new();}public class Logger {public void Message(string text){}}}

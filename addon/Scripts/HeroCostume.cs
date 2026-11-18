@@ -17,6 +17,8 @@ public sealed class HeroCostume : IDisposable
     private readonly Transform? handSlot;
     private readonly PowerTools.SpriteAnimNodeSync? motionNode;
     private readonly bool motionEnabled;
+    private readonly bool bitCostume;
+    private readonly BitCharacterShadow? groundShadow;
     private bool disposed;
     private float nextCheck;
     private int walkSamples;
@@ -34,13 +36,17 @@ public sealed class HeroCostume : IDisposable
         handSlot = vanilla.transform.Find("HandSlot");
         motionNode = vanilla.cosmetics.hat.SpriteSyncNode;
         motionEnabled = motionNode != null && motionNode.enabled;
-        bool bitCostume = name.StartsWith("BitCharacter", StringComparison.Ordinal);
+        bitCostume = name.StartsWith("BitCharacter", StringComparison.Ordinal);
         ownerId = vanilla.GetInstanceID(); priority = bitCostume ? 10 : 100;
         if (!owners.TryGetValue(ownerId, out var group)) { group = new(); owners.Add(ownerId, group); }
         originals = group.Count == 0 ? new() : group[0].originals;
         if (group.Count > 0) motionEnabled = group[0].motionEnabled;
         group.Add(this);
-        try { if (bitCostume) PrepareBitTextures(pixelated); if (IsActive) { Apply(); Update(); } }
+        try
+        {
+            if (bitCostume) { PrepareBitTextures(pixelated); groundShadow = new BitCharacterShadow(vanilla); }
+            if (IsActive) { Apply(); Update(); }
+        }
         catch { Dispose(); throw; }
     }
     private bool IsActive => ReferenceEquals(ActiveOwner(ownerId), this);
@@ -84,9 +90,11 @@ public sealed class HeroCostume : IDisposable
     }
     public void LateUpdate()
     {
+        if (!disposed) groundShadow?.Update(IsActive);
         if (disposed || !IsActive || vanilla == null || vanilla.MyPhysics == null) return;
         // Even the no-bounce hat node moves vertically through the run cycle.
-        // Full-body artwork needs the layer's stationary hat origin instead.
+        // Anchor full-body artwork at the stationary origin; bit costumes add
+        // a small run-frame-synchronized step instead of the large hat bounce.
         // Release the native node immediately for idle, ladder and vent states.
         if (!vanilla.MyPhysics.Animations.IsPlayingRunAnimation())
         {
@@ -101,6 +109,7 @@ public sealed class HeroCostume : IDisposable
         // NoS's normal idle cosmetic node is at y=.575 (also used by its fixed
         // visor). defaultHatVisorPosition is zero in-game, not that idle origin.
         var position = new Vector3(0f, .575f, 0f) + (layer.FlipX ? motionNode.flipOffset : motionNode.normalOffset);
+        if (bitCostume) position.y += BitCharacterMotion.WalkOffset(vanilla.MyPhysics.Animations.Animator.NormalizedTime);
         position.z = layer.hat.transform.localPosition.z;
         layer.hat.transform.localPosition = position;
         layer.hat.transform.localRotation = Quaternion.identity;
@@ -128,6 +137,7 @@ public sealed class HeroCostume : IDisposable
         if (disposed) return;
         bool active = IsActive;
         disposed = true;
+        groundShadow?.Dispose();
         if (owners.TryGetValue(ownerId, out var group)) group.Remove(this);
         var next = ActiveOwner(ownerId);
         if (next != null) { if (active) next.Apply(); return; }

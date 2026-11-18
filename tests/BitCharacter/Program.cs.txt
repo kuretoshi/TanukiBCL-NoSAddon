@@ -59,4 +59,47 @@ using(var smooth=new HeroCostume(player,"BitCharacter64",false))
     Check(player.cosmetics.hat.Hat!.ProductId.EndsWith("BitCharacter64"),"hero expiry resumes 64bit");
 }
 Check(player.cosmetics.hat.Hat!.ProductId=="original-hat" && !player.Body.forceRenderingOff,"64bit expiry restores original wardrobe/body");
+// Exercise the production costume and shadow together, including native
+// visibility and animation transitions, rather than just checking constants.
+foreach(string name in new[]{"BitCharacter8","BitCharacter16","BitCharacter32"}) MoreCosmic.AllHats[CosmicHat.IdToProductId("TanukiBCL_"+name)]=new CosmicHat(name);
+foreach(int bits in BitCharacterProgress.Bits)
+{
+    using var moving=new HeroCostume(player,"BitCharacter"+bits,bits<64);
+    var shadow=GameObject.shadows.Last();
+    player.Body.sortingOrder=17;player.Body.sortingLayerID=12;player.Body.gameObject.layer=9;
+    var heights=new List<float>();
+    for(int frame=0;frame<8;frame++)
+    {
+        player.MyPhysics.Animations.Animator.NormalizedTime=frame/8f;
+        moving.LateUpdate();heights.Add(player.cosmetics.hat.transform.localPosition.y);
+        Check(shadow.enabled && Math.Abs(shadow.transform.localPosition.y+.72f)<.0001,"shadow stays grounded while body moves");
+        Check(shadow.sortingOrder==17 && shadow.sortingLayerID==12 && shadow.gameObject.layer==9,"shadow shares native sorting and camera layers without sinking under the floor");
+    }
+    Check(Math.Abs(heights.Max()-heights.Min()-.07f)<.0001 && heights[0]==heights[4] && heights[2]==heights[6],"two synchronized modest steps per walk cycle in every stage");
+    player.Body.color=new Color(1,1,1,0);moving.LateUpdate();Check(shadow.color.a==0,"invisible player cannot leak a shadow");
+    player.Body.color=new Color(1,1,1,.5f);moving.LateUpdate();Check(Math.Abs(shadow.color.a-.14f)<.0001,"shadow follows fading player alpha");
+    player.MyPhysics.Animations.ladder=true;player.MyPhysics.Animations.running=false;
+    moving.LateUpdate();Check(!shadow.enabled && player.cosmetics.hat.SpriteSyncNode.enabled,"ladder hides shadow and releases native movement");
+    player.MyPhysics.Animations.ladder=false;player.MyPhysics.Animations.enterVent=true;
+    moving.LateUpdate();Check(!shadow.enabled,"vent entry hides shadow");
+    player.MyPhysics.Animations.enterVent=false;player.MyPhysics.Animations.Animator.Current=player.MyPhysics.Animations.group.ExitVentAnim;
+    moving.LateUpdate();Check(!shadow.enabled,"vent exit hides shadow");
+    player.MyPhysics.Animations.Animator.Current=new();player.inVent=true;
+    moving.LateUpdate();Check(!shadow.enabled,"inside vent hides shadow");player.inVent=false;
+    player.Data.IsDead=true;moving.LateUpdate();Check(!shadow.enabled,"ghost has no floor shadow");player.Data.IsDead=false;
+    player.cosmetics.Visible=false;moving.LateUpdate();Check(!shadow.enabled,"hidden cosmetics have no floor shadow");player.cosmetics.Visible=true;
+    player.Body.enabled=false;moving.LateUpdate();Check(!shadow.enabled,"disabled native body hides floor shadow");player.Body.enabled=true;
+    player.Body.gameObject.activeInHierarchy=false;moving.LateUpdate();Check(!shadow.enabled,"inactive body hides floor shadow");player.Body.gameObject.activeInHierarchy=true;
+    using(var transformed=new HeroCostume(player,HeroKind.Super))
+    {
+        player.MyPhysics.Animations.running=true;
+        moving.LateUpdate();transformed.LateUpdate();
+        Check(!shadow.enabled && Math.Abs(player.cosmetics.hat.transform.localPosition.y-.575f)<.0001,"hero keeps its fixed origin without bit shadow or bobbing");
+    }
+    moving.LateUpdate();Check(shadow.enabled,"bit shadow resumes after hero");
+    moving.Dispose();Check(shadow.gameObject.destroyed,"stage disposal removes shadow object");
+}
+Check(BitCharacterMotion.WalkOffset(.25f)==BitCharacterMotion.WalkOffset(10.25f),"movement phase repeats on native animation cycles");
+Check(BitCharacterMotion.WalkOffset(float.NaN)==0 && BitCharacterMotion.WalkOffset(float.PositiveInfinity)==0,"invalid animation phase stays at origin");
 Console.WriteLine("PASS bit stages: exact boundaries, pauses, final restore, multiple holders and costume priority/lifetime/wardrobe/motion restoration");
+Console.WriteLine("PASS bit motion and shadow: all six stages, paired steps, grounded shadow, visibility, ladder/vent/ghost states, hero priority and disposal");

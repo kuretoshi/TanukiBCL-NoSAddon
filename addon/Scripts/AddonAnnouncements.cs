@@ -6,6 +6,7 @@ using Assets.InnerNet;
 using HarmonyLib;
 using Il2CppInterop.Runtime.InteropTypes.Arrays;
 using Nebula;
+using UnityEngine;
 using Virial.Attributes;
 using Virial.Runtime;
 
@@ -31,9 +32,36 @@ public static class AddonAnnouncements
 
     public static void Preprocess(NebulaPreprocessor preprocessor)
     {
-        new Harmony("tanuki.bcl.roles.announcements").Patch(
+        var harmony = new Harmony("tanuki.bcl.roles.announcements");
+        harmony.Patch(
             AccessTools.Method(typeof(PlayerAnnouncementData), nameof(PlayerAnnouncementData.SetAnnouncements)),
             prefix: new HarmonyMethod(typeof(AddonAnnouncements), nameof(AddNews)) { priority = Priority.First });
+        // UchuAddon labels every announcement numbered >= 200000. Apply our
+        // badge afterwards, identifying ownership by ID rather than number.
+        harmony.Patch(
+            AccessTools.Method(typeof(AnnouncementPanel), nameof(AnnouncementPanel.SetUp)),
+            postfix: new HarmonyMethod(typeof(AddonAnnouncements), nameof(SetNewsIcon)) {
+                priority = Priority.Last,
+                after = new[] { "UchuAddonPatch" }
+            });
+    }
+
+    public static void SetNewsIcon(AnnouncementPanel __instance, [HarmonyArgument(0)] Announcement announcement)
+    {
+        if (announcement.Id?.StartsWith("TanukiBCLNoSAddon.", StringComparison.Ordinal) != true) return;
+        var label = __instance.transform.Find("ModLabel");
+        if (!label)
+        {
+            var obj = new GameObject("ModLabel");
+            obj.layer = __instance.gameObject.layer;
+            label = obj.transform;
+            label.SetParent(__instance.transform, false);
+            label.localPosition = new Vector3(-.8f, .13f, .5f);
+            label.localScale = Vector3.one * .9f;
+        }
+        var renderer = label.GetComponent<SpriteRenderer>() ?? label.gameObject.AddComponent<SpriteRenderer>();
+        renderer.sprite = AddonRoleTag.GetSprite();
+        renderer.maskInteraction = SpriteMaskInteraction.VisibleInsideMask;
     }
 
     public static void AddNews([HarmonyArgument(0)] ref Il2CppReferenceArray<Announcement> announcements)

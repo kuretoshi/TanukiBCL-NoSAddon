@@ -6,5 +6,7 @@
     <Compile Include="../../addon/Scripts/BitCharacterBroadcast.cs" Link="BitCharacterBroadcast.cs" />
     <Compile Include="../../addon/Scripts/AddonLinkState.cs" Link="AddonLinkState.cs" />
     <Compile Include="../../addon/Scripts/HeroCostume.cs" Link="HeroCostume.cs" />
+    <Compile Include="../../addon/Scripts/BitCharacterMotion.cs" Link="BitCharacterMotion.cs" />
+    <Compile Include="../../addon/Scripts/BitCharacterShadow.cs" Link="BitCharacterShadow.cs" />
   </ItemGroup>
 </Project>
