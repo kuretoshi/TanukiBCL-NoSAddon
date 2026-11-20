@@ -14,15 +14,29 @@
         "Address": "tWg4uMeMb/HOb85tfub/Main.png"
       },
       "Climb": {
-        "Address": "tWg4uMeMb/HOb85tfub/Climb.png"
+        "Address": "tWg4uMeMb/HOb85tfub/Climb.png",
+        "Length": 2,
+        "AnimSync": 1
       },
       "ClimbDown": {
-        "Address": "tWg4uMeMb/HOb85tfub/ClimbDown.png"
+        "Address": "tWg4uMeMb/HOb85tfub/ClimbDown.png",
+        "Length": 1
       },
       "Move": {
         "Address": "tWg4uMeMb/HOb85tfub/Move.png",
-        "Length": 8,
+        "Length": 12,
         "AnimSync": 1
+      },
+      "EnterVent": {
+        "Address": "tWg4uMeMb/HOb85tfub/EnterVent.png",
+        "Length": 1
+      },
+      "ExitVent": {
+        "Address": "tWg4uMeMb/HOb85tfub/EnterVent.png",
+        "Length": 1
+      },
+      "Exile": {
+        "Address": "tWg4uMeMb/HOb85tfub/Main.png"
       }
     },
     {
@@ -38,15 +52,29 @@
         "Address": "tWg4uMeMb/0Wg0o9Ic/Main.png"
       },
       "Climb": {
-        "Address": "tWg4uMeMb/0Wg0o9Ic/Climb.png"
+        "Address": "tWg4uMeMb/0Wg0o9Ic/Climb.png",
+        "Length": 2,
+        "AnimSync": 1
       },
       "ClimbDown": {
-        "Address": "tWg4uMeMb/0Wg0o9Ic/ClimbDown.png"
+        "Address": "tWg4uMeMb/0Wg0o9Ic/ClimbDown.png",
+        "Length": 1
       },
       "Move": {
         "Address": "tWg4uMeMb/0Wg0o9Ic/Move.png",
-        "Length": 8,
+        "Length": 12,
         "AnimSync": 1
+      },
+      "EnterVent": {
+        "Address": "tWg4uMeMb/0Wg0o9Ic/EnterVent.png",
+        "Length": 1
+      },
+      "ExitVent": {
+        "Address": "tWg4uMeMb/0Wg0o9Ic/EnterVent.png",
+        "Length": 1
+      },
+      "Exile": {
+        "Address": "tWg4uMeMb/0Wg0o9Ic/Main.png"
       }
     },
     {

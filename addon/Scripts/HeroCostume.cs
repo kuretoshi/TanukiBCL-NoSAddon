@@ -20,6 +20,8 @@ public sealed class HeroCostume : IDisposable
     private readonly bool motionEnabled;
     private readonly bool bitCostume;
     private readonly BitCharacterNativeVisual? nativeBody;
+    private readonly HeroZiplineVisual? ziplinePose;
+    private readonly BitCharacterZiplineVisual? bitZipline;
     private bool disposed;
     private float nextCheck;
     private int walkSamples;
@@ -48,7 +50,12 @@ public sealed class HeroCostume : IDisposable
         layerOwners[layerId] = ownerId;
         try
         {
-            if (bitCostume) nativeBody = new BitCharacterNativeVisual(vanilla, bitDepth);
+            if (bitCostume)
+            {
+                nativeBody = new BitCharacterNativeVisual(vanilla, bitDepth);
+                bitZipline = new BitCharacterZiplineVisual(bitDepth);
+            }
+            else ziplinePose = new HeroZiplineVisual(name == "SuperHero" ? HeroKind.Super : HeroKind.Evil);
             if (IsActive) { Apply(); Update(); }
         }
         catch { Dispose(); throw; }
@@ -58,7 +65,7 @@ public sealed class HeroCostume : IDisposable
     {
         if (!layerOwners.TryGetValue(id, out var owner)) return;
         var active = ActiveOwner(owner);
-        if (active?.bitCostume == true) active.LateUpdate();
+        active?.LateUpdate();
     }
     private static HeroCostume? ActiveOwner(int id)
     {
@@ -70,6 +77,15 @@ public sealed class HeroCostume : IDisposable
     }
     private void Apply()
     {
+        // Transfer ownership of the external pooled hand before the new
+        // appearance snapshots it, including a hero interrupting bit mode.
+        foreach (var owner in owners[ownerId])
+        {
+            if (ReferenceEquals(owner, this)) continue;
+            owner.nativeBody?.Update(false);
+            owner.ziplinePose?.Dispose();
+            owner.bitZipline?.Dispose();
+        }
         var layer = vanilla.cosmetics;
         int color = layer.ColorId;
         layer.SetSkin(CosmeticsLayer.EMPTY_SKIN_ID, color);
@@ -95,9 +111,28 @@ public sealed class HeroCostume : IDisposable
     }
     public void LateUpdate()
     {
-        if (!disposed) nativeBody?.Update(IsActive);
-        if (disposed || !IsActive || vanilla == null || vanilla.MyPhysics == null) return;
-        if (nativeBody != null) { RestoreMotion(); return; }
+        if (disposed || !IsActive || vanilla == null || vanilla.MyPhysics == null)
+        {
+            if (!disposed) nativeBody?.Update(false);
+            ziplinePose?.Dispose();
+            bitZipline?.Dispose();
+            return;
+        }
+        if (nativeBody != null)
+        {
+            bool hanging = bitZipline?.TryApply(vanilla) == true;
+            nativeBody.Update(!hanging);
+            RestoreMotion();
+            return;
+        }
+        bool wasZipline = ziplinePose?.Active == true;
+        if (ziplinePose?.TryApply(vanilla) == true)
+        {
+            if (motionNode != null) motionNode.enabled = false;
+            return;
+        }
+        if (wasZipline)
+            vanilla.cosmetics.hat.transform.localPosition = new Vector3(0, .575f, vanilla.cosmetics.hat.transform.localPosition.z);
         // Even the no-bounce hat node moves vertically through the run cycle.
         // Anchor the hero's full-body artwork at the stationary origin.
         // Release the native node immediately for idle, ladder and vent states.
@@ -108,8 +143,8 @@ public sealed class HeroCostume : IDisposable
         }
         var layer = vanilla.cosmetics;
         if (motionNode == null) return;
-        // Disabling only this synchronizer prevents its later callback from
-        // overwriting the fixed position; MoreCosmic still selects walk frames.
+        // The twelve poses already contain the torso step and fluttering
+        // cape. Do not add the full hat-node bob on top of that artwork.
         motionNode.enabled = false;
         // NoS's normal idle cosmetic node is at y=.575 (also used by its fixed
         // visor). defaultHatVisorPosition is zero in-game, not that idle origin.
@@ -119,11 +154,16 @@ public sealed class HeroCostume : IDisposable
         layer.hat.transform.localRotation = Quaternion.identity;
         layer.hat.FrontLayer.flipX = layer.FlipX;
         layer.hat.BackLayer.flipX = layer.FlipX;
+        // Apply after NoS too: its first-state reset would otherwise briefly
+        // show frame zero when entering the walk in the middle of a cycle.
+        if (hat.Move != null)
+            layer.hat.FrontLayer.sprite = hat.Move.GetSprite(HeroCostumeMotion.Frame(
+                vanilla.MyPhysics.Animations.Animator.NormalizedTime, hat.Move.GetLength()));
         walkSamples++;
         walkMinY = Mathf.Min(walkMinY, position.y);
         walkMaxY = Mathf.Max(walkMaxY, position.y);
         var frame = layer.hat.FrontLayer.sprite;
-        if (frame != null && frame.texture.width == 2400) walkFrames.Add(frame.GetInstanceID());
+        if (frame != null) walkFrames.Add(frame.GetInstanceID());
     }
     private void RestoreMotion()
     {
@@ -142,6 +182,8 @@ public sealed class HeroCostume : IDisposable
         bool active = IsActive;
         disposed = true;
         nativeBody?.Dispose();
+        ziplinePose?.Dispose();
+        bitZipline?.Dispose();
         if (owners.TryGetValue(ownerId, out var group)) group.Remove(this);
         var next = ActiveOwner(ownerId);
         if (next != null) { if (active) next.Apply(); return; }

@@ -12,7 +12,7 @@ namespace UnityEngine {
  public struct Color(float r,float g,float b,float a) {public float r=r,g=g,b=b,a=a;}
  public class Texture2D:Texture {public TextureFormat format;public bool mipmaps;public Texture2D(int w,int h,TextureFormat f,bool mip,bool linear=false){width=w;height=h;format=f;mipmaps=mip;isDataSRGB=!linear;}public Color32[] pixels=[];public Color32[] GetPixels32()=>(Color32[])pixels.Clone();public void SetPixels32(Color32[] p)=>pixels=p;public void ReadPixels(Rect r,int x,int y,bool mip){pixels=(Color32[])(RenderTexture.active?.samples.Clone() ?? Array.Empty<Color32>());}public void Apply(bool m,bool r){} }
  public class Sprite:Obj {public Texture2D texture=new(2400,2048,TextureFormat.RGBA32,false);public static Sprite Create(Texture2D t,Rect r,Vector2 v,float p)=>new(){texture=t};}
- public struct Vector3(float x,float y,float z) {public float x=x,y=y,z=z;public static Vector3 zero=>new();public static Vector3 one=>new(1,1,1);public static Vector3 operator+(Vector3 a,Vector3 b)=>new(a.x+b.x,a.y+b.y,a.z+b.z);}
+ public struct Vector3(float x,float y,float z) {public float x=x,y=y,z=z;public static Vector3 zero=>new();public static Vector3 one=>new(1,1,1);public static Vector3 operator+(Vector3 a,Vector3 b)=>new(a.x+b.x,a.y+b.y,a.z+b.z);public static Vector3 operator-(Vector3 a,Vector3 b)=>new(a.x-b.x,a.y-b.y,a.z-b.z);}
  public enum RenderTextureFormat {ARGB32} public enum RenderTextureReadWrite {sRGB,Linear}
  public class RenderTexture:Texture {public Color32[] samples=[];public static RenderTexture? active;public static List<RenderTexture> temporaries=new();public static RenderTexture GetTemporary(int w,int h,int d,RenderTextureFormat f,RenderTextureReadWrite r){var t=new RenderTexture(){width=w,height=h};temporaries.Add(t);return t;}public static void ReleaseTemporary(RenderTexture t)=>t.destroyed=true;}
  public static class Graphics {public static int Blits;public static bool Throw;public static void Blit(Texture s,RenderTexture t){Blits++;if(Throw)throw new InvalidOperationException("injected GPU failure");if(s is Texture2D image)t.samples=(Color32[])image.pixels.Clone();}}
@@ -27,17 +27,18 @@ namespace UnityEngine {
   public Transform? parent;public Vector3 localPosition,localScale=new(1,1,1);public Quaternion localRotation;
   public Vector3 lossyScale {get{var s=parent?.lossyScale ?? new Vector3(1,1,1);return new(localScale.x*s.x,localScale.y*s.y,localScale.z*s.z);}}
   public Vector3 position {get{var p=parent?.position ?? new Vector3();var s=parent?.lossyScale ?? new Vector3(1,1,1);return new(p.x+localPosition.x*s.x,p.y+localPosition.y*s.y,p.z+localPosition.z*s.z);}set{var p=parent?.position ?? new Vector3();var s=parent?.lossyScale ?? new Vector3(1,1,1);localPosition=new((value.x-p.x)/s.x,(value.y-p.y)/s.y,(value.z-p.z)/s.z);}}
+  public Vector3 TransformPoint(Vector3 point){var p=position;var s=lossyScale;return new(p.x+point.x*s.x,p.y+point.y*s.y,p.z+point.z*s.z);}
   public void SetParent(Transform? p,bool world)=>parent=p;public Transform? Find(string name)=>null;public T[] GetComponentsInChildren<T>(bool active)=>[];
  }
  public class GameObject:Object {public static List<SpriteRenderer> shadows=new();public string name;public bool activeInHierarchy=true;public int layer;public Transform transform=new();public GameObject(string name=""){this.name=name;} public T AddComponent<T>() where T:SpriteRenderer,new(){var r=new T(){gameObject=this};shadows.Add(r);return r;}}
  public class SpriteRenderer:Obj {public GameObject gameObject=new();public Transform transform=>gameObject.transform;public bool forceRenderingOff,flipX,flipY,enabled=true;public int sortingLayerID,sortingOrder,sortingGroupOrder;public Color color=new(1,1,1,1);public Sprite sprite=new();public Material sharedMaterial=new();public SpriteMaskInteraction maskInteraction;public MaterialPropertyBlock properties=new();public void GetPropertyBlock(MaterialPropertyBlock p)=>p.Copy(properties);public void SetPropertyBlock(MaterialPropertyBlock p)=>properties.Copy(p);}
  public static class Mathf {public static float Clamp01(float x)=>Math.Clamp(x,0,1);public static float Min(float a,float b)=>Math.Min(a,b);public static float Max(float a,float b)=>Math.Max(a,b);}
- public static class Time {public static float unscaledTime=>100;}
+ public static class Time {public static float unscaledTime=100;}
 }
 namespace PowerTools {public class SpriteAnimNodeSync {public bool enabled=true;public UnityEngine.Vector3 flipOffset,normalOffset;}public class SpriteAnim {public float NormalizedTime;public object Current=new();public object GetCurrentAnimation()=>Current;}}
 namespace Nebula.Modules.Cosmetics {
  public class Hat {public string ProductId="";}
- public class CosmicImage {readonly UnityEngine.Sprite[] sprites=Enumerable.Range(0,8).Select(_=>new UnityEngine.Sprite()).ToArray();public UnityEngine.Sprite GetSprite(int i)=>sprites[i];}
+ public class CosmicImage {readonly UnityEngine.Sprite[] sprites=Enumerable.Range(0,12).Select(_=>new UnityEngine.Sprite()).ToArray();public UnityEngine.Sprite GetSprite(int i)=>sprites[i];public int GetLength()=>sprites.Length;}
  public class CosmicHat(string name) {public CosmicImage Main=new(),Move=new(),Climb=new(),ClimbDown=new(),EnterVent=new(),ExitVent=new(),Exile=new();public string ProductId=>IdToProductId("TanukiBCL_"+name);public Hat MyHat=>new(){ProductId=ProductId};public static string IdToProductId(string id)=>"noshat_"+id;}
  public static class MoreCosmic {public static Dictionary<string,CosmicHat> AllHats=new();}
 }
@@ -56,5 +57,10 @@ public class AnimationGroup {public object ExitVentAnim=new();}
 public class Animations {public bool running=true,ladder,enterVent;public PowerTools.SpriteAnim Animator=new();public AnimationGroup group=new();public bool IsPlayingRunAnimation()=>running;public bool IsPlayingAnyLadderAnimation()=>ladder;public bool IsPlayingEnterVentAnimation()=>enterVent;}
 public class Physics {public Animations Animations=new();}
 public class PlayerData {public bool IsDead;}
-public class PlayerControl:UnityEngine.Obj {public UnityEngine.Vector2 FootPosition=new(7,-3);public UnityEngine.Vector2 GetTruePosition()=>FootPosition;public bool inVent;public CosmeticsLayer cosmetics=new();public UnityEngine.Transform transform=new();public Physics MyPhysics=new();public PlayerData Data=new();public Outfit CurrentOutfit=new();public UnityEngine.SpriteRenderer Body=>cosmetics.bodySprites[0].BodySprite;}
-namespace Virial {public static class NebulaAPI {public static LoggingApi Logging=new();} public class LoggingApi {public Logger NebulaLogger(string name)=>new();}public class Logger {public void Message(string text){}}}
+public class PlayerControl:UnityEngine.Obj {public byte PlayerId;public UnityEngine.Vector2 FootPosition=new(7,-3);public UnityEngine.Vector2 GetTruePosition()=>FootPosition;public bool inVent;public CosmeticsLayer cosmetics=new();public UnityEngine.Transform transform=new();public Physics MyPhysics=new();public PlayerData Data=new();public Outfit CurrentOutfit=new();public UnityEngine.SpriteRenderer Body=>cosmetics.bodySprites[0].BodySprite;}
+namespace Virial {public static class NebulaAPI {public static LoggingApi Logging=new();public static Addon GetAddon(string id)=>new();}public class Addon {public Resource GetResource(string path)=>new();}public class Resource {public System.IO.Stream AsStream()=>new System.IO.MemoryStream();} public class LoggingApi {public Logger NebulaLogger(string name)=>new();}public class Logger {public void Message(string text){}}}
+namespace Nebula.Utilities {public static class GraphicsHelper {public static void LoadImage(UnityEngine.Texture2D texture,byte[] bytes,bool mip){texture.width=1200;texture.height=375;}}}
+public class ShipStatus {public static ShipStatus? Instance;public T? TryCast<T>() where T:class=>this as T;}
+public class FungleShipStatus:ShipStatus {public ZiplineBehaviour Zipline=new();}
+public class ZiplineBehaviour {public Dictionary<byte,HandZiplinePoolable> playerIdHands=new();}
+public class HandZiplinePoolable {public UnityEngine.SpriteRenderer handRenderer=new();}

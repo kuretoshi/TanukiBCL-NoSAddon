@@ -69,3 +69,6 @@ Check(BitCharacterMotion.WalkTick(1.1f)>BitCharacterMotion.WalkTick(.1f),"new wa
 Check(BitCharacterMotion.WalkTick(float.NaN)==long.MinValue && BitCharacterMotion.WalkTick(float.PositiveInfinity)==long.MinValue,"invalid animation phase releases holding");
 Console.WriteLine("PASS bit stages: exact boundaries, pauses, direct 32bit-to-normal transition, legacy voice compatibility, multiple holders and costume priority/lifetime/wardrobe restoration");
 NativeVisualTests.Run();
+HeroMotionTests.Run();
+HeroZiplineTests.Run();
+BitZiplineTests.Run();

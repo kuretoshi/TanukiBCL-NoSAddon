@@ -34,7 +34,12 @@ def tint(image):
 def load_assets():
     contents = json.loads((COSMIC / 'Contents.json').read_text(encoding='utf-8-sig'))
     previous = json.loads(subprocess.check_output(['git', '-c', 'safe.directory=' + ROOT.as_posix(), '-C', str(ROOT), 'show', 'HEAD:addon/MoreCosmic/Contents.json'], text=True))
-    assert contents['Hats'][:2] == previous['Hats'][:2], 'existing hero definitions preserved'
+    # Hero motion now has its own exporter; retain its identity/idle costume
+    # while allowing intentional animation updates independently of bit art.
+    for hero in contents['Hats'][:2]:
+        before = next(h for h in previous['Hats'] if h['Name'] == hero['Name'])
+        for key in ['Name', 'Author', 'Package', 'IsHidden', 'Adaptive', 'Bounce', 'HideHands', 'Main']:
+            assert hero[key] == before[key], 'hero identity and idle art preserved'
     assert 'BitCharacter64' not in {h['Name'] for h in contents['Hats']}, '64bit removed from playable costumes'
     hats = {hat['Name']: hat for hat in contents['Hats']}
     images = {}

@@ -43,6 +43,7 @@ public sealed class VoiceStoneVisual : IDisposable
             BuildLetters(template, word, characterWidth);
             collider.enabled = true;
             BindLocalCollider();
+            VoiceStoneImpactSound.Play(root, new Vector2(x, y));
         }
         catch { Dispose(); throw; }
     }

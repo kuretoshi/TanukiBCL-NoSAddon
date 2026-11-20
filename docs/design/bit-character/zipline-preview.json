@@ -1,0 +1,23 @@
+{
+  "previewOnly": true,
+  "gameCapture": false,
+  "source": "addon/Resources/BitCharacter/Zipline{bits}.png",
+  "stages": [
+    2,
+    4,
+    8,
+    16,
+    32
+  ],
+  "frames": 4,
+  "pose": "seated with both feet forward, leaning back, detached gripping hand, no long arm",
+  "gripPixels": [
+    220,
+    55
+  ],
+  "directions": [
+    "right",
+    "left"
+  ],
+  "selectedColorExample": "red"
+}

@@ -30,20 +30,42 @@ public sealed class VoiceStoneRequest
 {
     public int Sequence { get; private set; }
     public double Expires { get; private set; }
+    public long SpeechExpiresUtc { get; private set; }
     public bool Waiting { get; private set; }
-    public bool Arm(int sequence, double now, double seconds)
+    public string Candidate { get; private set; } = "";
+    public bool Confirming => Candidate.Length > 0;
+    public const double ConfirmationSeconds = 20;
+    public bool Arm(int sequence, double now, double seconds, long utcNow = 0)
     {
-        if (sequence <= Sequence || Waiting || !double.IsFinite(now) || !double.IsFinite(seconds) || seconds < 1 || seconds > 10) return false;
+        if (sequence <= Sequence || Waiting || Confirming || !double.IsFinite(now) || !double.IsFinite(seconds) || seconds < 1 || seconds > 10 ||
+            utcNow < 0 || utcNow > long.MaxValue - 10000) return false;
         Sequence = sequence; Expires = now + seconds; Waiting = true;
+        SpeechExpiresUtc = utcNow + (long)(seconds * 1000);
+        return true;
+    }
+    public bool Propose(int sequence, double now, string input, int maximum, double deliveryGrace = 0)
+    {
+        if (!Waiting || sequence != Sequence || !double.IsFinite(now) || !double.IsFinite(deliveryGrace) || deliveryGrace < 0 || deliveryGrace > 1 ||
+            now >= Expires + deliveryGrace || !VoiceStoneRules.TryWord(input, maximum, out string word)) return false;
+        Waiting = false;
+        Candidate = word;
+        Expires = now + ConfirmationSeconds;
         return true;
     }
     public bool Accept(int sequence, double now, string input, int maximum, out string word, double deliveryGrace = 0)
     {
         word = "";
-        if (!Waiting || sequence != Sequence || !double.IsFinite(now) || !double.IsFinite(deliveryGrace) || deliveryGrace < 0 || deliveryGrace > 1 ||
-            now >= Expires + deliveryGrace || !VoiceStoneRules.TryWord(input, maximum, out word)) return false;
-        Waiting = false;
+        if (!Confirming || sequence != Sequence || !double.IsFinite(now) || !double.IsFinite(deliveryGrace) || deliveryGrace < 0 || deliveryGrace > 1 ||
+            now >= Expires + deliveryGrace || !VoiceStoneRules.TryWord(input, maximum, out word) || word != Candidate) return false;
+        Cancel();
         return true;
     }
-    public void Cancel() => Waiting = false;
+    public bool Retry(int sequence, int next, double now, double seconds, long utcNow = 0)
+    {
+        if (!Confirming || sequence != Sequence || next <= Sequence || !double.IsFinite(now) || now >= Expires ||
+            !double.IsFinite(seconds) || seconds < 1 || seconds > 10 || utcNow < 0 || utcNow > long.MaxValue - 10000) return false;
+        Cancel();
+        return Arm(next, now, seconds, utcNow);
+    }
+    public void Cancel() { Waiting = false; Candidate = ""; SpeechExpiresUtc = 0; }
 }

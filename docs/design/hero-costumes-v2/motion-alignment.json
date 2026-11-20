@@ -1,0 +1,256 @@
+[
+  {
+    "hero": "SuperHero",
+    "source": "docs/design/hero-costumes-v2/source/super-motion.png",
+    "scale": 0.8514412416851441,
+    "walkFrames": 12,
+    "ascentFrames": 2,
+    "descentFrames": 1,
+    "walkBobPixels": [
+      0,
+      -2,
+      -1,
+      1,
+      4,
+      3,
+      0,
+      -2,
+      -1,
+      1,
+      4,
+      3
+    ],
+    "capeFramesDistinct": 12,
+    "ziplineFrames": 4,
+    "ziplineGripPixels": [
+      220,
+      55
+    ],
+    "ziplineScale": 0.664576802507837,
+    "ziplineLayout": {
+      "scale": 0.664576802507837,
+      "gripPixels": [
+        220,
+        55
+      ],
+      "pose": "seated, both feet forward, detached hand, no long arm",
+      "frames": [
+        {
+          "offset": [
+            -4,
+            -54
+          ],
+          "gripSource": [
+            336.5,
+            164.0
+          ],
+          "bodyBounds": [
+            34,
+            193,
+            442,
+            474
+          ],
+          "handBounds": [
+            299,
+            131,
+            374,
+            197
+          ]
+        },
+        {
+          "offset": [
+            -4,
+            -54
+          ],
+          "gripSource": [
+            337.0,
+            164.0
+          ],
+          "bodyBounds": [
+            18,
+            193,
+            442,
+            474
+          ],
+          "handBounds": [
+            299,
+            131,
+            375,
+            197
+          ]
+        },
+        {
+          "offset": [
+            -3,
+            -54
+          ],
+          "gripSource": [
+            336.0,
+            164.0
+          ],
+          "bodyBounds": [
+            17,
+            192,
+            442,
+            505
+          ],
+          "handBounds": [
+            298,
+            131,
+            374,
+            197
+          ]
+        },
+        {
+          "offset": [
+            -4,
+            -54
+          ],
+          "gripSource": [
+            337.0,
+            164.0
+          ],
+          "bodyBounds": [
+            25,
+            193,
+            442,
+            474
+          ],
+          "handBounds": [
+            299,
+            131,
+            375,
+            197
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "hero": "EvilHero",
+    "source": "docs/design/hero-costumes-v2/source/evil-motion.png",
+    "scale": 0.8084210526315789,
+    "walkFrames": 12,
+    "ascentFrames": 2,
+    "descentFrames": 1,
+    "walkBobPixels": [
+      0,
+      -2,
+      -1,
+      1,
+      4,
+      3,
+      0,
+      -2,
+      -1,
+      1,
+      4,
+      3
+    ],
+    "capeFramesDistinct": 12,
+    "ziplineFrames": 4,
+    "ziplineGripPixels": [
+      220,
+      55
+    ],
+    "ziplineScale": 0.6144927536231884,
+    "ziplineLayout": {
+      "scale": 0.6144927536231884,
+      "gripPixels": [
+        220,
+        55
+      ],
+      "pose": "seated, both feet forward, detached hand, no long arm",
+      "frames": [
+        {
+          "offset": [
+            -10,
+            -71
+          ],
+          "gripSource": [
+            373.5,
+            204.5
+          ],
+          "bodyBounds": [
+            40,
+            217,
+            461,
+            475
+          ],
+          "handBounds": [
+            341,
+            175,
+            406,
+            234
+          ]
+        },
+        {
+          "offset": [
+            -10,
+            -71
+          ],
+          "gripSource": [
+            374.0,
+            204.5
+          ],
+          "bodyBounds": [
+            29,
+            217,
+            461,
+            475
+          ],
+          "handBounds": [
+            341,
+            175,
+            407,
+            234
+          ]
+        },
+        {
+          "offset": [
+            -10,
+            -71
+          ],
+          "gripSource": [
+            374.0,
+            204.5
+          ],
+          "bodyBounds": [
+            39,
+            217,
+            461,
+            491
+          ],
+          "handBounds": [
+            341,
+            175,
+            407,
+            234
+          ]
+        },
+        {
+          "offset": [
+            -10,
+            -70
+          ],
+          "gripSource": [
+            373.5,
+            204.0
+          ],
+          "bodyBounds": [
+            32,
+            217,
+            461,
+            475
+          ],
+          "handBounds": [
+            341,
+            174,
+            406,
+            234
+          ]
+        }
+      ]
+    }
+  }
+]

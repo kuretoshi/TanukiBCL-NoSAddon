@@ -35,6 +35,18 @@ public sealed class WallEarRound
     }
     public static bool Nearby(Ear ear, float x, float y) => Coordinate(x) && Coordinate(y) &&
         (ear.X - x) * (ear.X - x) + (ear.Y - y) * (ear.Y - y) <= UseDistance * UseDistance;
+    public Ear? Nearest(float x, float y, Func<Ear, bool> reachable)
+    {
+        Ear? nearest = null;
+        float best = float.PositiveInfinity;
+        foreach (var ear in ears)
+        {
+            float distance = (ear.X - x) * (ear.X - x) + (ear.Y - y) * (ear.Y - y);
+            if (!Nearby(ear, x, y) || distance >= best || !reachable(ear)) continue;
+            nearest = ear; best = distance;
+        }
+        return nearest;
+    }
     private static bool Coordinate(float value) => float.IsFinite(value) && Math.Abs(value) <= 10000;
     public void Stop() => Active = null;
     public void Clear() { Stop(); ears.Clear(); }

@@ -2,10 +2,16 @@
   <PropertyGroup><OutputType>Exe</OutputType><TargetFramework>net8.0</TargetFramework><ImplicitUsings>enable</ImplicitUsings><Nullable>enable</Nullable><EnableDefaultCompileItems>false</EnableDefaultCompileItems></PropertyGroup>
   <ItemGroup>
     <Compile Include="Program.cs.txt" /><Compile Include="CostumeStubs.cs.txt" /><Compile Include="NativeVisualTests.cs.txt" />
+    <Compile Include="HeroMotionTests.cs.txt" />
+    <Compile Include="HeroZiplineTests.cs.txt" />
+    <Compile Include="BitZiplineTests.cs.txt" />
     <Compile Include="../../addon/Scripts/BitCharacterProgress.cs" Link="BitCharacterProgress.cs" />
     <Compile Include="../../addon/Scripts/BitCharacterBroadcast.cs" Link="BitCharacterBroadcast.cs" />
     <Compile Include="../../addon/Scripts/AddonLinkState.cs" Link="AddonLinkState.cs" />
     <Compile Include="../../addon/Scripts/HeroCostume.cs" Link="HeroCostume.cs" />
+    <Compile Include="../../addon/Scripts/HeroCostumeMotion.cs" Link="HeroCostumeMotion.cs" />
+    <Compile Include="../../addon/Scripts/HeroZiplineVisual.cs" Link="HeroZiplineVisual.cs" />
+    <Compile Include="../../addon/Scripts/BitCharacterZiplineVisual.cs" Link="BitCharacterZiplineVisual.cs" />
     <Compile Include="../../addon/Scripts/BitCharacterMotion.cs" Link="BitCharacterMotion.cs" />
     <Compile Include="../../addon/Scripts/BitCharacterNativeVisual.cs" Link="BitCharacterNativeVisual.cs" />
   </ItemGroup>

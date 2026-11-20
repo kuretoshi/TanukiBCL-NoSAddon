@@ -12,7 +12,7 @@ public sealed class WallEarVisual : IDisposable
     private static Sprite? sprite;
     private readonly GameObject root;
     private readonly SpriteRenderer image;
-    public WallEarVisual(WallEarRound.Ear ear, Action click)
+    public WallEarVisual(WallEarRound.Ear ear)
     {
         root = new GameObject("TanukiWallEar");
         root.layer = LayerMask.NameToLayer("Objects");
@@ -20,11 +20,6 @@ public sealed class WallEarVisual : IDisposable
         root.transform.localScale = Vector3.one * .45f;
         image = root.AddComponent<SpriteRenderer>();
         image.sprite = GetSprite();
-        var collider = root.AddComponent<BoxCollider2D>();
-        collider.size = new Vector2(1.3f, 1.4f);
-        collider.isTrigger = true;
-        var button = root.SetUpButton(true);
-        button.OnClick.AddListener(click);
     }
     public void Update(bool visible, bool nearby, bool active)
     {

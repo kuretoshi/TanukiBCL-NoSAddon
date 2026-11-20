@@ -152,6 +152,8 @@ public static class HeroSpeechHost
     public static void AcceptUnifiedWord(byte id, int request, string? kind, string? word)
     {
         var player = UnifiedPlayer(id);
+        if (kind == "stone") NebulaAPI.Logging.NebulaLogger("TanukiVoiceStone").Message(
+            "Bridge result player=" + id + "; request=" + request + "; present=" + (player != null) + "; ready=" + ReadyFor(id));
         if (player == null || !ReadyFor(id)) return;
         if (kind == "hero") player.Role.GetAbility<HeroAbility>()?.RecogniseSpeech(request);
         if (kind == "ng" && player.TryGetModifier<NGWord.Instance>(out var ng)) ng.RecogniseSpeech(request);

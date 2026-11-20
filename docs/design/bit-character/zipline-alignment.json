@@ -1,0 +1,98 @@
+{
+  "scale": 0.6153846153846154,
+  "gripPixels": [
+    220,
+    55
+  ],
+  "pose": "seated, both feet forward, detached hand, no long arm",
+  "frames": [
+    {
+      "offset": [
+        18,
+        -62
+      ],
+      "gripSource": [
+        328.0,
+        190.5
+      ],
+      "bodyBounds": [
+        105,
+        216,
+        432,
+        509
+      ],
+      "handBounds": [
+        281,
+        150,
+        375,
+        231
+      ]
+    },
+    {
+      "offset": [
+        18,
+        -62
+      ],
+      "gripSource": [
+        327.5,
+        190.0
+      ],
+      "bodyBounds": [
+        105,
+        216,
+        443,
+        509
+      ],
+      "handBounds": [
+        280,
+        149,
+        375,
+        231
+      ]
+    },
+    {
+      "offset": [
+        18,
+        -62
+      ],
+      "gripSource": [
+        328.0,
+        190.5
+      ],
+      "bodyBounds": [
+        105,
+        216,
+        432,
+        509
+      ],
+      "handBounds": [
+        281,
+        150,
+        375,
+        231
+      ]
+    },
+    {
+      "offset": [
+        19,
+        -62
+      ],
+      "gripSource": [
+        327.0,
+        190.5
+      ],
+      "bodyBounds": [
+        105,
+        216,
+        444,
+        509
+      ],
+      "handBounds": [
+        280,
+        150,
+        374,
+        231
+      ]
+    }
+  ]
+}

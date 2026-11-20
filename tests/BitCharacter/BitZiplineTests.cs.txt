@@ -1,0 +1,111 @@
+using TanukiBCL.Roles;
+using UnityEngine;
+
+public static class BitZiplineTests
+{
+    private static void Check(bool valid,string message) {if(!valid)throw new Exception(message);}
+    private static SpriteRenderer View()=>GameObject.shadows.Last(r=>r.gameObject.name=="TanukiBitZiplineBody" && !r.gameObject.destroyed);
+    private static void Size(SpriteRenderer view,SpriteRenderer body)
+    {
+        var actual=view.transform.lossyScale;var expected=body.transform.lossyScale;
+        Check(Math.Abs(actual.x-expected.x)<.00001f && Math.Abs(actual.y-expected.y)<.00001f,
+            "zipline pose must inherit the native cosmetic body scale, not the unscaled player root");
+    }
+    private static void Grip(SpriteRenderer view,SpriteRenderer hand)
+    {
+        var point=view.transform.TransformPoint(new Vector3((view.flipX?-1:1)*(220f-300f*.53f)/112.875f,(view.flipY?-1:1)*(375f*.425f-55f)/112.875f,0));
+        Check(Math.Abs(point.x-hand.transform.position.x)<.0001f && Math.Abs(point.y-hand.transform.position.y)<.0001f,
+            "full-body pose uses the exact hero palm anchor, including scaled parents");
+    }
+    public static void Run()
+    {
+        foreach(int bits in BitCharacterProgress.Bits)
+        {
+            Time.unscaledTime=100;
+            var ship=new FungleShipStatus();ShipStatus.Instance=ship;
+            var player=new PlayerControl(){PlayerId=3};
+            player.transform.localPosition=new(4,-2,0);player.transform.localScale=new(1.3f,.8f,1);
+            // Real game hierarchy: the visible cosmetics are scaled down
+            // inside the player root. A root child incorrectly draws ~3x big.
+            var cosmeticsRoot=new Transform();cosmeticsRoot.SetParent(player.transform,false);
+            cosmeticsRoot.localPosition=new(.05f,.1f,0);cosmeticsRoot.localScale=new(.35f,.35f,1);
+            player.Body.transform.SetParent(cosmeticsRoot,false);
+            player.Body.transform.localScale=new(.9f,1.1f,1);
+            var pooled=new HandZiplinePoolable();var hand=pooled.handRenderer;
+            ship.Zipline.playerIdHands[3]=pooled;
+            player.Body.properties.SetColor(PlayerMaterial.BodyColor,new Color(.2f,.6f,.9f,1));
+            hand.transform.position=new(13,6,0);
+            int blits=Graphics.Blits;
+            using(var costume=new HeroCostume(player,"BitCharacter"+bits,true))
+            {
+                costume.LateUpdate();
+                var view=View();
+                var bodyView=GameObject.shadows.Last(r=>r.gameObject.name=="TanukiBitNativeBody" && !r.gameObject.destroyed);
+                Check(view.enabled && !bodyView.enabled && hand.forceRenderingOff,"one hanging full-body pose replaces both the idle body and separate native hand");
+                Check(view.transform.parent==player.Body.transform && !ReferenceEquals(view.sprite,hand.sprite),"dedicated pose inherits the visible body hierarchy");
+                Size(view,player.Body);
+                Check(view.sprite.texture.width==1200 && view.sprite.texture.height==375 && view.sprite.texture.filterMode==FilterMode.Point,"four-frame bit-specific game asset with point filtering");
+                Check(Graphics.Blits==blits,"zipline needs no GPU readback or atlas conversion per frame");
+                var color=view.properties.GetColor(PlayerMaterial.BodyColor);
+                Check(bits==2?color.r==color.g && color.g==color.b:color.r==.2f && color.g==.6f && color.b==.9f,"full costume uses four grayscale tones or live player palette");
+                var seen=new HashSet<int>();
+                for(int i=0;i<4;i++)
+                {
+                    Time.unscaledTime=100+(i+.5f)*.14f;
+                    if(i==2) cosmeticsRoot.localScale=new(.5f,.25f,1);
+                    costume.LateUpdate();Grip(view,hand);Size(view,player.Body);
+                    seen.Add(view.sprite.GetInstanceID());
+                    var position=view.transform.position;
+                    costume.LateUpdate();Grip(view,hand);
+                    Check(Math.Abs(position.x-view.transform.position.x)<.0001f && Math.Abs(position.y-view.transform.position.y)<.0001f,"late callbacks cannot accumulate full-body offset");
+                }
+                Check(seen.Count==4,"all four dangling-foot poses are used");
+                player.cosmetics.FlipX=true;player.Body.color=new Color(1,1,1,.4f);
+                player.Body.maskInteraction=SpriteMaskInteraction.VisibleInsideMask;
+                player.Body.sortingOrder=22;player.Body.sortingGroupOrder=102;
+                hand.transform.position=new(-6,8,0);costume.LateUpdate();Grip(view,hand);
+                Check(view.flipX && view.color.a==.4f && view.maskInteraction==player.Body.maskInteraction &&
+                    view.sortingOrder==22 && view.sortingGroupOrder==102,"full-body pose follows flip, opacity, mask and draw depth");
+                var peer=new PlayerControl(){PlayerId=4};var peerHand=new HandZiplinePoolable();
+                ship.Zipline.playerIdHands[4]=peerHand;
+                using(var shared=new BitCharacterZiplineVisual(bits))
+                {
+                    Check(shared.TryApply(peer),"second rider applies independently");
+                    var peerView=View();
+                    Check(ReferenceEquals(view.sprite.texture,peerView.sprite.texture),"same-stage riders share the pose texture");
+                }
+                Check(hand.forceRenderingOff && !peerHand.handRenderer.forceRenderingOff,"other rider disposal does not reveal this native hand");
+                using(var hero=new HeroCostume(player,HeroKind.Super))
+                {
+                    Check(view.gameObject.destroyed && !hand.forceRenderingOff,"hero takes full-body and glove ownership first");
+                    hero.LateUpdate();costume.LateUpdate();
+                    Check(hand.forceRenderingOff,"inactive bit cannot reveal the hero's glove");
+                }
+                costume.LateUpdate();var resumed=View();Grip(resumed,hand);Size(resumed,player.Body);
+                Check(resumed.enabled && !bodyView.enabled,"hero expiry resumes current bit's hanging pose during the ride");
+                ship.Zipline.playerIdHands.Remove(3);costume.LateUpdate();
+                Check(!hand.forceRenderingOff && resumed.gameObject.destroyed && bodyView.enabled,"arrival/cancel destroys hanging body and restores ordinary native bit animation");
+                ship.Zipline.playerIdHands[3]=pooled;costume.LateUpdate();
+                var beforeDeath=View();player.Data.IsDead=true;costume.LateUpdate();
+                Check(beforeDeath.gameObject.destroyed && !hand.forceRenderingOff && !bodyView.enabled,"death restores native glove and removes the hanging costume");
+                player.Data.IsDead=false;costume.LateUpdate();
+                var beforeStage=View();
+                int nextBits=bits==32?2:32;
+                using(var nextStage=new HeroCostume(player,"BitCharacter"+nextBits,true))
+                {
+                    Check(beforeStage.gameObject.destroyed && !hand.forceRenderingOff,"stage transfer releases the previous full-body pose and glove claim");
+                    nextStage.LateUpdate();Grip(View(),hand);Size(View(),player.Body);
+                    Check(hand.forceRenderingOff,"new stage acquires its own hanging pose during the ride");
+                }
+                costume.LateUpdate();
+                ship.Zipline.playerIdHands.Remove(3);costume.LateUpdate();
+                ship.Zipline.playerIdHands[3]=pooled;hand.forceRenderingOff=true;costume.LateUpdate();
+                Check(bodyView.enabled && !GameObject.shadows.Any(r=>r.gameObject.name=="TanukiBitZiplineBody" && !r.gameObject.destroyed && r.enabled),"prehidden glove is not exposed by the dedicated pose");
+            }
+            Check(hand.forceRenderingOff && !player.Body.forceRenderingOff,"expiry restores original glove/body rendering flags");
+        }
+        try {new BitCharacterZiplineVisual(64);throw new Exception("retired 64bit accepted");}catch(ArgumentOutOfRangeException){}
+        ShipStatus.Instance=null;Time.unscaledTime=100;
+        Console.WriteLine("PASS five dedicated bit zipline poses: native body scale (including .35 cosmetic root and live scale changes), single full body, hero grip alignment, four frames, flip/colors/masks, shared assets, zero per-frame readback, hero priority/resume and arrival cleanup");
+    }
+}

@@ -46,6 +46,7 @@ public sealed class WallEar : DefinedSingleAbilityRoleTemplate<WallEar.Ability>,
         private readonly WallEarRound round = new();
         private readonly List<WallEarVisual> visuals = new();
         private ModAbilityButton? button;
+        private ModAbilityButton? useButton;
         private bool frozen;
         private static double Now => Time.unscaledTimeAsDouble;
         private bool Alive => !MyPlayer.IsDead && !MyPlayer.IsDisconnected;
@@ -62,6 +63,16 @@ public sealed class WallEar : DefinedSingleAbilityRoleTemplate<WallEar.Ability>,
             button.ShowUsesIcon(0, ((int)Maximum).ToString());
             button.OnClick = _ => { var p = MyPlayer.TruePosition; PlaceRpc.Invoke((MyPlayer, ++nextSequence, p.x, p.y)); };
             button.StartCoolDown();
+            useButton = NebulaAPI.Modules.AbilityButton(this, player, VirtualKeyInput.SecondaryAbility, 0f,
+                "tanukiWallEar.use", WallEarVisual.Icon,
+                _ => Eligible && (round.Active != null || player.CanMove && NearbyEar() != null),
+                _ => Eligible && (round.Active != null || NearbyEar() != null));
+            useButton.OnClick = _ =>
+            {
+                if (round.Active != null) { ListenRpc.Invoke((MyPlayer, ++nextSequence, -1)); return; }
+                var ear = NearbyEar();
+                if (ear != null) Request(ear);
+            };
         }
         internal void Place(int sequence, float x, float y)
         {
@@ -70,7 +81,7 @@ public sealed class WallEar : DefinedSingleAbilityRoleTemplate<WallEar.Ability>,
                 !round.Place(sequence, x, y, Now, Maximum, Cooldown)) return;
             if (!AmOwner) return;
             var ear = round.Ears[round.Ears.Count - 1];
-            visuals.Add(new WallEarVisual(ear, () => Request(ear)));
+            visuals.Add(new WallEarVisual(ear));
             button?.ShowUsesIcon(0, ((int)Maximum - round.Ears.Count).ToString());
             button?.StartCoolDown();
         }
@@ -85,6 +96,11 @@ public sealed class WallEar : DefinedSingleAbilityRoleTemplate<WallEar.Ability>,
             var p = MyPlayer.TruePosition;
             return WallEarRound.Nearby(ear, p.x, p.y) &&
                 !(NebulaAPI.CurrentGame?.CurrentMap?.AnyWallsBetween(p, new Virial.Compat.Vector2(ear.X, ear.Y)) ?? true);
+        }
+        private WallEarRound.Ear? NearbyEar()
+        {
+            var p = MyPlayer.TruePosition;
+            return round.Nearest(p.x, p.y, CanReach);
         }
         internal void Listen(int sequence, int ear)
         {
@@ -101,6 +117,7 @@ public sealed class WallEar : DefinedSingleAbilityRoleTemplate<WallEar.Ability>,
         }
         private void UpdateOwner()
         {
+            useButton?.SetLabel(round.Active == null ? "tanukiWallEar.use" : "tanukiWallEar.release");
             if (round.Active is { } ear)
             {
                 if (!MyPlayer.CanMove || !CanReach(ear)) { ListenRpc.Invoke((MyPlayer, ++nextSequence, -1)); return; }

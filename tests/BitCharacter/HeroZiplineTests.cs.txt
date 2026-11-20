@@ -1,0 +1,73 @@
+using TanukiBCL.Roles;
+using UnityEngine;
+
+public static class HeroZiplineTests
+{
+    private static void Check(bool valid, string message) { if (!valid) throw new Exception(message); }
+    private static void Grip(PlayerControl player, SpriteRenderer hand)
+    {
+        var front=player.cosmetics.hat.FrontLayer;
+        var grip=front.transform.TransformPoint(new Vector3((front.flipX?-1:1)*(220f-300f*.53f)/112.875f,(375f*.425f-55f)/112.875f,0));
+        Check(Math.Abs(grip.x-hand.transform.position.x)<.0001f && Math.Abs(grip.y-hand.transform.position.y)<.0001f,"hero palm stays on the real zipline grip with scaled/moved parents");
+    }
+    public static void Run()
+    {
+        foreach(var kind in new[]{HeroKind.Super,HeroKind.Evil})
+        {
+            var ship=new FungleShipStatus();ShipStatus.Instance=ship;
+            var player=new PlayerControl(){PlayerId=7};player.MyPhysics.Animations.running=false;
+            player.transform.localPosition=new(4,-2,0);player.transform.localScale=new(1.3f,.8f,1);
+            player.cosmetics.hat.transform.SetParent(player.transform,false);
+            player.cosmetics.hat.FrontLayer.transform.SetParent(player.cosmetics.hat.transform,false);
+            player.cosmetics.hat.SpriteSyncNode.normalOffset=new(.01f,.02f,.3f);
+            player.cosmetics.hat.SpriteSyncNode.flipOffset=new(-.01f,.02f,.4f);
+            player.cosmetics.hat.transform.localPosition=new(0,0,.2f);
+            var pooled=new HandZiplinePoolable();var hand=pooled.handRenderer;
+            hand.transform.position=new(18,25,.4f);ship.Zipline.playerIdHands[7]=pooled;
+            var other=new HandZiplinePoolable();ship.Zipline.playerIdHands[8]=other;
+            var originalHand=hand.sprite;
+            Time.unscaledTime=200;
+            using(var hero=new HeroCostume(player,kind))
+            {
+                var frames=new HashSet<int>();
+                hero.LateUpdate();
+                for(int i=0;i<4;i++)
+                {
+                    Time.unscaledTime=200+(i+.5f)*.14f;
+                    HeroCostume.AfterCosmeticsUpdate(player.cosmetics.GetInstanceID());
+                    frames.Add(player.cosmetics.hat.FrontLayer.sprite.GetInstanceID());
+                    Grip(player,hand);
+                    var y=player.cosmetics.hat.transform.position.y;
+                    hero.LateUpdate();Grip(player,hand);
+                    Check(Math.Abs(player.cosmetics.hat.transform.position.y-y)<.0001f,"repeated callbacks do not accumulate zipline offset");
+                    Check(player.cosmetics.hat.transform.localPosition.z==.2f,"zipline anchor preserves draw depth without accumulating node z offset");
+                }
+                Check(frames.Count==4 && hand.forceRenderingOff && !other.handRenderer.forceRenderingOff,"four cape frames with only the rider's native hand hidden");
+                player.cosmetics.FlipX=true;hand.transform.position=new(-12,8,.4f);hero.LateUpdate();Grip(player,hand);
+                Check(player.cosmetics.hat.FrontLayer.flipX,"leftward travel mirrors the hanging pose");
+                ship.Zipline.playerIdHands.Remove(7);
+                hero.LateUpdate();
+                Check(!hand.forceRenderingOff && player.cosmetics.hat.SpriteSyncNode.enabled,"normal arrival/cancellation releases native hand and node");
+                ship.Zipline.playerIdHands[7]=pooled;hand.forceRenderingOff=true;
+                hero.LateUpdate();
+            }
+            Check(hand.forceRenderingOff && ReferenceEquals(hand.sprite,originalHand),"mid-ride expiry restores original hand visibility without changing pooled sprite");
+            hand.forceRenderingOff=false;
+            using(var pose=new HeroZiplineVisual(kind))
+            {
+                Check(pose.TryApply(player),"joining an already active ride works");
+                var replacement=new HandZiplinePoolable();replacement.handRenderer.forceRenderingOff=true;
+                ship.Zipline.playerIdHands[7]=replacement;
+                pose.TryApply(player);
+                Check(!hand.forceRenderingOff,"pooled hand replacement restores previous renderer");
+                player.Data.IsDead=true;
+                Check(!pose.TryApply(player) && replacement.handRenderer.forceRenderingOff,"death ends pose and preserves prior hidden hand state");
+                player.Data.IsDead=false;ship.Zipline.playerIdHands[7]=pooled;pose.TryApply(player);
+                ShipStatus.Instance=new ShipStatus();
+                Check(!pose.TryApply(player) && !hand.forceRenderingOff,"map change/meeting reset clears zipline override");
+            }
+        }
+        ShipStatus.Instance=null;Time.unscaledTime=100;
+        Console.WriteLine("PASS both hero ziplines: four cape frames, grip anchor/flip, no drift, separate riders, arrival/cancel, pooled hand reuse, death, map reset and mid-ride expiry");
+    }
+}

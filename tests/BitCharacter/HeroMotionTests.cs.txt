@@ -1,0 +1,55 @@
+using TanukiBCL.Roles;
+using Nebula.Modules.Cosmetics;
+using UnityEngine;
+
+public static class HeroMotionTests
+{
+    private static void Check(bool valid, string message) { if (!valid) throw new Exception(message); }
+    public static void Run()
+    {
+        foreach (var kind in new[] { HeroKind.Super, HeroKind.Evil })
+        {
+            var player = new PlayerControl();
+            var node = player.cosmetics.hat.SpriteSyncNode;
+            using (var hero = new HeroCostume(player, kind))
+            {
+                var hat = MoreCosmic.AllHats[player.cosmetics.hat.Hat!.ProductId];
+                var actual = new HashSet<int>();
+                for (int cycle = 0; cycle < 2; cycle++)
+                    for (int frame = 0; frame < 12; frame++)
+                    {
+                        player.MyPhysics.Animations.Animator.NormalizedTime = cycle + (frame+.25f)/12;
+                        // Simulate NoS resetting the frame and attachment before
+                        // our post-cosmetics callback. Both heroes must win last.
+                        player.cosmetics.hat.FrontLayer.sprite = hat.Move.GetSprite(0);
+                        player.cosmetics.hat.transform.localPosition = new(0, .9f, .2f);
+                        HeroCostume.AfterCosmeticsUpdate(player.cosmetics.GetInstanceID());
+                        var sprite = player.cosmetics.hat.FrontLayer.sprite;
+                        actual.Add(sprite!.GetInstanceID());
+                        Check(ReferenceEquals(sprite, hat.Move.GetSprite(frame)), "hero follows all twelve native walk phases after NoS update");
+                        Check(!node.enabled && player.cosmetics.hat.transform.localPosition.y == .575f && player.cosmetics.hat.transform.localPosition.z == .2f, "body step is not doubled by the hat node; draw depth preserved");
+                    }
+                Check(actual.Count == 12, "hero walk never collapses back to eight poses");
+                player.cosmetics.FlipX = true;
+                hero.LateUpdate();
+                Check(player.cosmetics.hat.FrontLayer.flipX && player.cosmetics.hat.BackLayer.flipX, "cape and body turn together");
+                player.MyPhysics.Animations.running = false;
+                foreach (string state in new[] { "idle", "up", "down", "vent" })
+                {
+                    player.MyPhysics.Animations.ladder = state is "up" or "down";
+                    var sprite = state == "up" ? hat.Climb.GetSprite(1) : state == "down" ? hat.ClimbDown.GetSprite(0) : state == "vent" ? hat.EnterVent.GetSprite(0) : hat.Main.GetSprite(0);
+                    player.cosmetics.hat.FrontLayer.sprite = sprite;
+                    HeroCostume.AfterCosmeticsUpdate(player.cosmetics.GetInstanceID());
+                    Check(node.enabled && ReferenceEquals(player.cosmetics.hat.FrontLayer.sprite, sprite), "native ladder/down/idle/vent selection and synchronizer restored");
+                }
+                player.MyPhysics.Animations.running = true;
+                player.MyPhysics.Animations.Animator.NormalizedTime = float.NaN;
+                hero.LateUpdate();
+                Check(ReferenceEquals(player.cosmetics.hat.FrontLayer.sprite, hat.Move.GetSprite(0)), "bad animation phase safely selects frame zero");
+            }
+            Check(node.enabled && !player.Body.forceRenderingOff && player.cosmetics.hat.Hat!.ProductId == "original-hat", "hero expiry restores wardrobe and native rendering");
+        }
+        Check(HeroCostumeMotion.Frame(float.PositiveInfinity, 12) == 0 && HeroCostumeMotion.Frame(-.25f, 12) == 9, "nonfinite and negative animation times handled");
+        Console.WriteLine("PASS both hero motions: twelve walk/cape frames, post-NoS ordering, fixed attachment, flip, ladder up/down/vent restoration and expiry");
+    }
+}
