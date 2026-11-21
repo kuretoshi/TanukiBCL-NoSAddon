@@ -1,0 +1,284 @@
+[
+  {
+    "hero": "SuperHero",
+    "source": "docs/design/hero-costumes-native/super-atlas.png",
+    "nativeBodyBounds": [
+      78,
+      116,
+      228,
+      308
+    ],
+    "idleBounds": [
+      71,
+      116,
+      229,
+      309
+    ],
+    "nativeFeet": [
+      157.5,
+      308
+    ],
+    "sourceBodyBounds": [
+      65,
+      66,
+      197,
+      226
+    ],
+    "uniformScale": 1.2,
+    "walkFrames": 12,
+    "walkBobPixels": [
+      0,
+      -2,
+      -1,
+      1,
+      4,
+      3,
+      0,
+      -2,
+      -1,
+      1,
+      4,
+      3
+    ],
+    "ladderUpScale": 1.3375796178343948,
+    "zipline": {
+      "scale": 1.352112676056338,
+      "gripPixels": [
+        220,
+        55
+      ],
+      "pose": "seated, both feet forward, detached hand, no long arm",
+      "frames": [
+        {
+          "offset": [
+            -26,
+            -21
+          ],
+          "gripSource": [
+            182.0,
+            56.0
+          ],
+          "bodyBounds": [
+            48,
+            66,
+            195,
+            216
+          ],
+          "handBounds": [
+            158,
+            37,
+            206,
+            75
+          ]
+        },
+        {
+          "offset": [
+            -26,
+            -21
+          ],
+          "gripSource": [
+            182.0,
+            56.0
+          ],
+          "bodyBounds": [
+            33,
+            66,
+            195,
+            209
+          ],
+          "handBounds": [
+            158,
+            37,
+            206,
+            75
+          ]
+        },
+        {
+          "offset": [
+            -26,
+            -20
+          ],
+          "gripSource": [
+            182.0,
+            55.5
+          ],
+          "bodyBounds": [
+            28,
+            66,
+            195,
+            207
+          ],
+          "handBounds": [
+            158,
+            37,
+            206,
+            74
+          ]
+        },
+        {
+          "offset": [
+            -26,
+            -19
+          ],
+          "gripSource": [
+            182.0,
+            55.0
+          ],
+          "bodyBounds": [
+            31,
+            66,
+            195,
+            206
+          ],
+          "handBounds": [
+            158,
+            36,
+            206,
+            74
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "hero": "EvilHero",
+    "source": "docs/design/hero-costumes-native/evil-atlas.png",
+    "nativeBodyBounds": [
+      78,
+      116,
+      228,
+      308
+    ],
+    "idleBounds": [
+      57,
+      117,
+      234,
+      308
+    ],
+    "nativeFeet": [
+      157.5,
+      308
+    ],
+    "sourceBodyBounds": [
+      61,
+      72,
+      197,
+      220
+    ],
+    "uniformScale": 1.2972972972972974,
+    "walkFrames": 12,
+    "walkBobPixels": [
+      0,
+      -2,
+      -1,
+      1,
+      4,
+      3,
+      0,
+      -2,
+      -1,
+      1,
+      4,
+      3
+    ],
+    "ladderUpScale": 1.4583333333333333,
+    "zipline": {
+      "scale": 1.337539432176656,
+      "gripPixels": [
+        220,
+        55
+      ],
+      "pose": "seated, both feet forward, detached hand, no long arm",
+      "frames": [
+        {
+          "offset": [
+            -23,
+            -27
+          ],
+          "gripSource": [
+            182.0,
+            61.0
+          ],
+          "bodyBounds": [
+            49,
+            72,
+            201,
+            216
+          ],
+          "handBounds": [
+            157,
+            41,
+            207,
+            81
+          ]
+        },
+        {
+          "offset": [
+            -21,
+            -26
+          ],
+          "gripSource": [
+            180.5,
+            60.5
+          ],
+          "bodyBounds": [
+            36,
+            72,
+            197,
+            206
+          ],
+          "handBounds": [
+            155,
+            41,
+            206,
+            80
+          ]
+        },
+        {
+          "offset": [
+            -21,
+            -26
+          ],
+          "gripSource": [
+            180.5,
+            60.5
+          ],
+          "bodyBounds": [
+            22,
+            72,
+            195,
+            206
+          ],
+          "handBounds": [
+            155,
+            41,
+            206,
+            80
+          ]
+        },
+        {
+          "offset": [
+            -22,
+            -27
+          ],
+          "gripSource": [
+            181.0,
+            61.0
+          ],
+          "bodyBounds": [
+            25,
+            73,
+            199,
+            206
+          ],
+          "handBounds": [
+            156,
+            41,
+            206,
+            81
+          ]
+        }
+      ]
+    }
+  }
+]

@@ -83,7 +83,7 @@ public static class AddonLinkRuntime
     {
         if (!command.TryGetProperty("players", out var ids) || ids.ValueKind != JsonValueKind.Array || ids.GetArrayLength() > 24) return;
         foreach (var id in ids.EnumerateArray())
-            if (id.ValueKind == JsonValueKind.Number && id.TryGetByte(out byte player)) HeroSpeechHost.AcceptUnifiedReady(player);
+            if (id.ValueKind == JsonValueKind.Number && id.TryGetByte(out byte player)) HeroSpeechHost.AcceptUnifiedReady(player, command.TryGetProperty("neural", out var neural) && neural.ValueKind == JsonValueKind.Array && neural.GetArrayLength() <= 24 && neural.EnumerateArray().Any(n => n.ValueKind == JsonValueKind.Number && n.TryGetByte(out byte value) && value == player));
     }
     private static void Parrot(JsonElement command)
     {

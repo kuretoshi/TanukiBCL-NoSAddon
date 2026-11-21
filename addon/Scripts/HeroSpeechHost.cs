@@ -26,10 +26,13 @@ public static class HeroSpeechHost
     private static long nextPublish;
     private static int lastStage = -1;
     private static readonly Dictionary<byte, long> readyUntil = new();
-    private static readonly RemoteProcess<(byte player, bool ready)> ReadyRpc = new("TanukiSpeechReadyV2", (data, _) =>
+    private static readonly Dictionary<byte, long> neuralUntil = new();
+    public static bool NeuralFor(byte player) => neuralUntil.TryGetValue(player, out long until) && until > Now;
+    private static readonly RemoteProcess<(byte player, bool ready, bool neural)> ReadyRpc = new("TanukiSpeechReadyV3", (data, _) =>
     {
         if (data.ready) readyUntil[data.player] = Now + 1200;
         else readyUntil.Remove(data.player);
+        if (data.ready && data.neural) neuralUntil[data.player] = Now + 1200; else neuralUntil.Remove(data.player);
     });
     private static long Now => DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
     public static bool IsPresent(UnityEngine.Component? view) => view != null && view.gameObject.activeInHierarchy;
@@ -107,7 +110,7 @@ public static class HeroSpeechHost
         if (player == null || player.IsDead || player.IsDisconnected || (!AmongUsClient.Instance.AmHost && !player.AmOwner)) return;
         if (fields.Length == 6 && fields[2] == "ready")
         {
-            if (fields[5] == "0" || fields[5] == "1") ReadyRpc.Invoke((id, fields[5] == "1"));
+            if (fields[5] == "0" || fields[5] == "1") ReadyRpc.Invoke((id, fields[5] == "1", false));
             return;
         }
         if (fields.Length < 7 || fields.Length > 8 || fields[2] != "word" || !int.TryParse(fields[5], out int request) || !ReadyFor(id)) return;
@@ -145,9 +148,9 @@ public static class HeroSpeechHost
         return player != null && !player.IsDead && !player.IsDisconnected &&
             (player.AmOwner || AmongUsClient.Instance.AmHost) ? player : null;
     }
-    public static void AcceptUnifiedReady(byte id)
+    public static void AcceptUnifiedReady(byte id, bool neural = false)
     {
-        if (UnifiedPlayer(id) != null) ReadyRpc.Invoke((id, true));
+        if (UnifiedPlayer(id) != null) ReadyRpc.Invoke((id, true, neural));
     }
     public static void AcceptUnifiedWord(byte id, int request, string? kind, string? word)
     {

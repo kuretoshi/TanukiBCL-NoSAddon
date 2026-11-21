@@ -31,16 +31,23 @@ public sealed class VoiceStoneRequest
     public int Sequence { get; private set; }
     public double Expires { get; private set; }
     public long SpeechExpiresUtc { get; private set; }
+    public long RecordStartedUtc { get; private set; }
+    public long RecordUntilUtc { get; private set; }
+    public double RecordUntil { get; private set; }
+    public bool LocalNeural { get; private set; }
     public bool Waiting { get; private set; }
     public string Candidate { get; private set; } = "";
     public bool Confirming => Candidate.Length > 0;
     public const double ConfirmationSeconds = 20;
-    public bool Arm(int sequence, double now, double seconds, long utcNow = 0)
+    public bool Arm(int sequence, double now, double seconds, long utcNow = 0, bool localNeural = false)
     {
         if (sequence <= Sequence || Waiting || Confirming || !double.IsFinite(now) || !double.IsFinite(seconds) || seconds < 1 || seconds > 10 ||
-            utcNow < 0 || utcNow > long.MaxValue - 10000) return false;
-        Sequence = sequence; Expires = now + seconds; Waiting = true;
-        SpeechExpiresUtc = utcNow + (long)(seconds * 1000);
+            utcNow < 0 || utcNow > long.MaxValue - 30000) return false;
+        Sequence = sequence; RecordUntil = now + seconds; LocalNeural = localNeural;
+        Expires = RecordUntil + (localNeural ? 20 : 0); Waiting = true;
+        RecordStartedUtc = utcNow;
+        RecordUntilUtc = utcNow + (long)(seconds * 1000);
+        SpeechExpiresUtc = RecordUntilUtc + (localNeural ? 20000 : 0);
         return true;
     }
     public bool Propose(int sequence, double now, string input, int maximum, double deliveryGrace = 0)
@@ -60,12 +67,12 @@ public sealed class VoiceStoneRequest
         Cancel();
         return true;
     }
-    public bool Retry(int sequence, int next, double now, double seconds, long utcNow = 0)
+    public bool Retry(int sequence, int next, double now, double seconds, long utcNow = 0, bool localNeural = false)
     {
         if (!Confirming || sequence != Sequence || next <= Sequence || !double.IsFinite(now) || now >= Expires ||
-            !double.IsFinite(seconds) || seconds < 1 || seconds > 10 || utcNow < 0 || utcNow > long.MaxValue - 10000) return false;
+            !double.IsFinite(seconds) || seconds < 1 || seconds > 10 || utcNow < 0 || utcNow > long.MaxValue - 30000) return false;
         Cancel();
-        return Arm(next, now, seconds, utcNow);
+        return Arm(next, now, seconds, utcNow, localNeural);
     }
-    public void Cancel() { Waiting = false; Candidate = ""; SpeechExpiresUtc = 0; }
+    public void Cancel() { Waiting = false; Candidate = ""; SpeechExpiresUtc = RecordUntilUtc = RecordStartedUtc = 0; LocalNeural = false; }
 }

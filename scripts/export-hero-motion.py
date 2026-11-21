@@ -56,6 +56,10 @@ def strip(frames, output):
 
 
 def main():
+    if (ROOT/'docs/design/hero-costumes-native/super-atlas.png').exists():
+        import runpy
+        runpy.run_path(str(ROOT/'scripts/export-native-hero-costumes.py'), run_name='__main__')
+        return
     definition_path = ROOT / 'addon/MoreCosmic/Contents.json'
     definition = json.loads(definition_path.read_text(encoding='utf-8-sig'))
     metadata, previews = [], []

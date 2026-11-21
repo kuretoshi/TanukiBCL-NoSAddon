@@ -47,3 +47,10 @@ var sound = VoiceStoneImpactSynth.Create();
 Check(sound.Length == 7056 && sound.All(float.IsFinite) && sound.Max(Math.Abs) <= .8f, "Impact length, finite samples, no clipping");
 Check(sound[0] == 0 && sound[^1] == 0 && sound.Take(2000).Sum(v => v * v) > sound.TakeLast(1000).Sum(v => v * v) * 100, "Impact has an attack and fades out");
 Console.WriteLine("PASS voice stone confirmation/re-record, expiry/replay/cancellation, nearby ear selection and stone impact audio");
+
+var neural = new VoiceStoneRequest();
+Check(neural.Arm(1, 100, 5, 1700000000000, true) && neural.LocalNeural && neural.Expires == 125, "Shared local model has a bounded recording and response window");
+Check(neural.RecordUntilUtc == 1700000005000 && neural.SpeechExpiresUtc == 1700000025000, "Record window and recognition deadline stay separate");
+Check(neural.Propose(1, 110, "インポスター", 8), "Shared-model result after recording opens confirmation");
+Check(neural.Retry(1, 2, 111, 3, 1700000011000) && !neural.LocalNeural && neural.Expires == 114, "Retry can use the lightweight fallback");
+neural.Cancel(); Check(!neural.LocalNeural && !neural.Propose(2,112,"猫",8), "Cancellation blocks stale local-model results");
