@@ -1,5 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk">
-<ItemGroup><Compile Remove="NGWordSubmission/**" /></ItemGroup>
+<ItemGroup><Compile Remove="NGWordSubmission/**;VoiceAuthentication/**" /></ItemGroup>
 <ItemGroup><Compile Include="../addon/Scripts/CloneRound.cs" Link="CloneRound.cs" /><Compile Include="../addon/Scripts/ParrotBroadcast.cs" Link="ParrotBroadcast.cs" /></ItemGroup>
 <ItemGroup><Compile Include="../addon/Scripts/ParrotRound.cs" Link="ParrotRound.cs" /></ItemGroup>
   <ItemGroup><Compile Include="../addon/Scripts/WallEarRound.cs" Link="WallEarRound.cs" /></ItemGroup>

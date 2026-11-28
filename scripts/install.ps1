@@ -10,15 +10,16 @@ $taskZipName = 'TanukiBCL-NoSAddon.zip'
 $taskZip = Join-Path $taskRoot ('dist/' + $taskZipName)
 if (!(Test-Path -LiteralPath $taskZip)) { throw 'Run package.ps1 first.' }
 $taskAddons = Join-Path $taskGame 'Addons'
-$taskBackup = Join-Path $taskRoot ('dist/installed-backups/' + [Guid]::NewGuid().ToString('N'))
-New-Item -ItemType Directory -Path $taskBackup -Force | Out-Null
 $taskOldZips = @(Get-ChildItem -LiteralPath $taskAddons -File | Where-Object {
     $_.Name -match '^(?:\[M\d+\])?TanukiBCL-(?:NoSAddon(?:-.*)?|Roles-.*)\.zip$'
 })
+if ($taskOldZips.Count -gt 1) {
+    throw 'Multiple Tanuki addon ZIPs were found. Review the duplicates before installing.'
+}
 # Keep the subscription marker so NoS does not download a second copy at startup.
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 $taskMarketBytes = $null
-$taskInstalledName = $taskZipName
+$taskInstalledName = if ($taskOldZips.Count -eq 1) { $taskOldZips[0].Name } else { $taskZipName }
 foreach ($taskOld in $taskOldZips) {
     $taskArchive = [System.IO.Compression.ZipFile]::OpenRead($taskOld.FullName)
     try {
@@ -34,11 +35,12 @@ foreach ($taskOld in $taskOldZips) {
         break
     } finally { $taskArchive.Dispose() }
 }
-foreach ($taskOld in $taskOldZips) {
-    Move-Item -LiteralPath $taskOld.FullName -Destination (Join-Path $taskBackup $taskOld.Name)
-}
 $taskInstalledPath = Join-Path $taskAddons $taskInstalledName
-Copy-Item -LiteralPath $taskZip -Destination $taskInstalledPath
+$taskInstalledFullPath = [System.IO.Path]::GetFullPath($taskInstalledPath)
+if ([System.IO.Path]::GetDirectoryName($taskInstalledFullPath) -ne [System.IO.Path]::GetFullPath($taskAddons)) {
+    throw 'Unexpected addon installation path.'
+}
+Copy-Item -LiteralPath $taskZip -Destination $taskInstalledPath -Force
 if ((Get-FileHash -LiteralPath $taskZip).Hash -ne (Get-FileHash -LiteralPath $taskInstalledPath).Hash) {
     throw 'Installed ZIP hash does not match.'
 }

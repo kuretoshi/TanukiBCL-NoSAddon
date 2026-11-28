@@ -22,6 +22,7 @@ public static class VoiceRoleIcons
     public static readonly Image PortableMegaphone = new WrapSpriteLoader(() => Get(11));
     public static readonly Image WallEar = new WrapSpriteLoader(() => Get(12));
     public static readonly Image ParrotTrainer = new WrapSpriteLoader(() => Get(13));
+    public static readonly Image Sonarman = new WrapSpriteLoader(() => Get(14));
     public static Sprite InterviewerSprite => Get(6);
     public static Sprite VoiceJammingerSprite => Get(7);
     public static Sprite DyingVoiceSprite => Get(9);
@@ -32,12 +33,12 @@ public static class VoiceRoleIcons
     public static Sprite EvilHeroSprite => Get(5);
     private static readonly string[] Names = { "Bibiri", "Talkative", "LimitSpeech", "NGWord", "SuperHero", "EvilHero",
         "Interviewer", "VoiceJamminger", "VoiceStone", "DyingVoiceMessage",
-        "MegaphoneLaser", "PortableMegaphone", "WallEar", "ParrotTrainer" };
+        "MegaphoneLaser", "PortableMegaphone", "WallEar", "ParrotTrainer", "Sonarman" };
     private static readonly Sprite?[] Cache = new Sprite?[Names.Length];
     private static readonly float[] CanvasWidths = {
         256f / 175f, 256f / 175f, 256f / 175f, 256f / 175f, 256f / 175f, 256f / 175f,
         256f / 200f, 128f / 85f, 96f / 75f, 256f / 200f,
-        256f / 175f, 256f / 175f, 1f, 1f
+        256f / 175f, 256f / 175f, 1f, 1f, 256f / 175f
     };
 
     private static Sprite Get(int index)

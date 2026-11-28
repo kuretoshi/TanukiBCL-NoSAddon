@@ -2,8 +2,8 @@
 "role.tanukiVoiceStone.short" : "Stone"
 "role.tanukiVoiceStone.blurb" : "Make your words stand in their way."
 "role.tanukiVoiceStone.generalBlurb" : "Make your words stand in their way."
-"role.tanukiVoiceStone.doc" : "A Madmate role that helps the Impostors win. You cannot kill.<br>Press your ability button and say a word. Review the recognized word, then choose Place to create stone letters at your position. Choose Record again if it is wrong. Each character has a fixed size, so longer words form wider obstacles.<br>All living players, including you and Impostors, are blocked. Ghosts can pass through."
-"role.tanukiVoiceStone.tips" : "・One word is taken from final speech recognition tokens, never the entire sentence. Some function words and fillers are skipped. Speak one short word at a time.<br>・Oversized or low-confidence words are ignored; another word may be recognised before the listening timer expires.<br>・Placement uses your position when you confirm. Nearby players hear a stone impact. Confirm within 20 seconds. Players overlapping a new stone can leave it once.<br>・Stones expire after the configured duration and are removed at meeting start, game end or role removal. Reaching the limit replaces the oldest stone.<br>・The cooldown begins when you press the ability button. Death or a meeting cancels listening and confirmation.<br>・You have no crew tasks, cannot fix lights or communications, and win with the Impostors.<br>・Requires a compatible TanukiBCL. Desktop/Lite/.NET recognise locally; the host recognises Web/mobile participants. Recognition can be inaccurate and uses the Japanese model.<br>・Supported BetterCrewLink clients normally use the shared local model when prepared, falling back to the lightweight recognizer when unavailable. Shared-model recognition starts after the configured recording duration and waits up to 20 seconds for a result."
+"role.tanukiVoiceStone.doc" : "A Madmate role that helps the Impostors win. You cannot kill.<br>Press your ability button and say a word. Stone letters appear at your position as soon as a word is recognized. Each character has a fixed size, so longer words form wider obstacles.<br>All living players, including you and Impostors, are blocked. Ghosts can pass through."
+"role.tanukiVoiceStone.tips" : "・One word is taken from final speech recognition tokens, never the entire sentence. Some function words and fillers are skipped. Speak one short word at a time.<br>・Oversized or low-confidence words are ignored; another word may be recognised before the listening timer expires.<br>・Placement uses your position when the recognition result arrives. Nearby players hear a stone impact. Players overlapping a new stone can leave it once.<br>・Stones expire after the configured duration and are removed at meeting start, game end or role removal. Reaching the limit replaces the oldest stone.<br>・The cooldown begins when you press the ability button. An unsuccessful recognition can be retried after 0.5 seconds. Death or a meeting cancels listening.<br>・You have no crew tasks, cannot fix lights or communications, and win with the Impostors.<br>・Requires a compatible TanukiBCL. Desktop/Lite/.NET recognise locally; the host recognises Web/mobile participants. Recognition can be inaccurate and uses the Japanese model.<br>・Supported BetterCrewLink clients normally use the shared local model when prepared, falling back to the lightweight recognizer when unavailable. Shared-model recognition starts at the end of an utterance, placing the stone as soon as the result arrives. The configured duration is the maximum recording time; results may arrive up to 20 seconds after that deadline."
 "role.tanukiVoiceStone.winCond" : "Win with the Impostors."
 "options.role.tanukiVoiceStone.detail" : "Turn a spoken word into stone letters that block all living players."
 "options.role.tanukiVoiceStone.cooldown" : "Ability cooldown"
@@ -14,11 +14,6 @@
 "options.role.tanukiVoiceStone.limit" : "Maximum active stones"
 "button.label.tanukiVoiceStone.arm" : "Place"
 "button.label.tanukiVoiceStone.listening" : "Say a word"
-"tanuki.voiceStone.title" : "Recognized word"
-"tanuki.voiceStone.hint" : "Place this word? Record again if it is incorrect. Confirm within 20 seconds."
-"tanuki.voiceStone.place" : "Place"
-"tanuki.voiceStone.retry" : "Record again"
-"tanuki.voiceStone.cancel" : "Cancel"
 
 "button.label.tanukiVoiceStone.processing" : "Recognizing"
 

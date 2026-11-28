@@ -9,10 +9,16 @@ public sealed class NGWordFiles
 {
     private readonly string directory;
     private readonly Func<string> template;
+    private readonly string fileStem;
     private static readonly UTF8Encoding Utf8 = new(false, true);
-    private string SelectionFile => Path.Combine(directory, "NGWordSource.txt");
-    public string DefaultFile => Path.Combine(directory, "NGWords.txt");
-    public NGWordFiles(string directory, Func<string> template) { this.directory = directory; this.template = template; }
+    private string SelectionFile => Path.Combine(directory, fileStem == "NGWords" ? "NGWordSource.txt" : fileStem + ".source.txt");
+    public string DefaultFile => Path.Combine(directory, fileStem + ".txt");
+    public NGWordFiles(string directory, Func<string> template, string fileStem = "NGWords")
+    {
+        if (string.IsNullOrWhiteSpace(fileStem) || fileStem.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0 || fileStem is "." or "..")
+            throw new ArgumentException("Invalid word-list file name.");
+        this.directory = directory; this.template = template; this.fileStem = fileStem;
+    }
     public string SourcePath => File.Exists(SelectionFile) ? ReadSmall(SelectionFile).Trim() : DefaultFile;
     public string EnsureDefault()
     {

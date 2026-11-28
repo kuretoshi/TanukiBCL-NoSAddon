@@ -49,6 +49,7 @@ public static class HeroSpeechHost
     public static void Update()
     {
         AddonLinkRuntime.Update();
+        SonarmanVoiceHub.Update();
         TanukiAddonDataBridge.EnsureGameHook();
         var game = AmongUsClient.Instance;
         bool active = game != null && game.GameState == InnerNet.InnerNetClient.GameStates.Started &&
@@ -61,12 +62,14 @@ public static class HeroSpeechHost
         try { NGWord.EnsureAllPlayersAssigned(); }
         catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException || ex is ArgumentException)
         { NebulaAPI.Logging.NebulaLogger("TanukiSpeech").Error(ex.Message); }
-        var players = NebulaAPI.CurrentGame!.GetAllPlayers().Where(p => !p.IsDead && !p.IsDisconnected && (game!.AmHost || p.AmOwner)).ToArray();
+        var players = NebulaAPI.CurrentGame!.GetAllPlayers().Where(p => (!p.IsDead || VoiceAuthenticationTask.HasSpeech(p.PlayerId)) && !p.IsDisconnected && (game!.AmHost || p.AmOwner)).ToArray();
         var jobs = new List<object>();
         foreach (var player in players)
         {
             var hero = player.Role.GetAbility<HeroAbility>();
-            if (hero != null && hero.SpeechEligible) jobs.Add(hero.SpeechJob);
+            var task = VoiceAuthenticationTask.SpeechJob(player.PlayerId);
+            if (task != null) jobs.Add(task);
+            else if (hero != null && hero.SpeechEligible) jobs.Add(hero.SpeechJob);
             if (player.TryGetModifier<NGWord.Instance>(out var ng) && ng.SpeechEligible) jobs.Add(ng.SpeechJob);
             var stone = player.Role.GetAbility<VoiceStone.Ability>();
             if (stone != null && stone.SpeechEligible) jobs.Add(stone.SpeechJob);
@@ -107,7 +110,7 @@ public static class HeroSpeechHost
             !long.TryParse(fields[3], NumberStyles.None, CultureInfo.InvariantCulture, out long time) ||
             Now - time > 500 || time - Now > 100 || !byte.TryParse(fields[4], out byte id)) return;
         var player = NebulaAPI.CurrentGame?.GetPlayer(id);
-        if (player == null || player.IsDead || player.IsDisconnected || (!AmongUsClient.Instance.AmHost && !player.AmOwner)) return;
+        if (player == null || (player.IsDead && !VoiceAuthenticationTask.HasSpeech(id)) || player.IsDisconnected || (!AmongUsClient.Instance.AmHost && !player.AmOwner)) return;
         if (fields.Length == 6 && fields[2] == "ready")
         {
             if (fields[5] == "0" || fields[5] == "1") ReadyRpc.Invoke((id, fields[5] == "1", false));
@@ -119,7 +122,7 @@ public static class HeroSpeechHost
             if (fields[6] == "stone") ReadStone(player, request, fields[7]);
             return;
         }
-        if (fields[6] == "henshin") player.Role.GetAbility<HeroAbility>()?.RecogniseSpeech(request);
+        if (fields[6] == "henshin") RecogniseHeroOrTask(player, request);
         if (fields[6] == "ng" && player.TryGetModifier<NGWord.Instance>(out var ng)) ng.RecogniseSpeech(request);
     }
     private static void ReadStone(Virial.Game.Player player, int request, string encoded)
@@ -145,7 +148,7 @@ public static class HeroSpeechHost
     private static Virial.Game.Player? UnifiedPlayer(byte id)
     {
         var player = NebulaAPI.CurrentGame?.GetPlayer(id);
-        return player != null && !player.IsDead && !player.IsDisconnected &&
+        return player != null && (!player.IsDead || VoiceAuthenticationTask.HasSpeech(id)) && !player.IsDisconnected &&
             (player.AmOwner || AmongUsClient.Instance.AmHost) ? player : null;
     }
     public static void AcceptUnifiedReady(byte id, bool neural = false)
@@ -158,8 +161,12 @@ public static class HeroSpeechHost
         if (kind == "stone") NebulaAPI.Logging.NebulaLogger("TanukiVoiceStone").Message(
             "Bridge result player=" + id + "; request=" + request + "; present=" + (player != null) + "; ready=" + ReadyFor(id));
         if (player == null || !ReadyFor(id)) return;
-        if (kind == "hero") player.Role.GetAbility<HeroAbility>()?.RecogniseSpeech(request);
+        if (kind == "hero") RecogniseHeroOrTask(player, request);
         if (kind == "ng" && player.TryGetModifier<NGWord.Instance>(out var ng)) ng.RecogniseSpeech(request);
         if (kind == "stone" && word != null) player.Role.GetAbility<VoiceStone.Ability>()?.RecogniseSpeech(request, word);
+    }
+    private static void RecogniseHeroOrTask(Virial.Game.Player player, int request)
+    {
+        if (!VoiceAuthenticationTask.Recognise(player, request)) player.Role.GetAbility<HeroAbility>()?.RecogniseSpeech(request);
     }
 }

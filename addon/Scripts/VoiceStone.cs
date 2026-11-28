@@ -62,19 +62,13 @@ public sealed class VoiceStone : DefinedRoleTemplate, DefinedRole, IAssignableDo
         (m, _) => m.player.Role.GetAbility<Ability>()?.Begin(m.sequence, m.neural));
     private static readonly RemoteProcess<(Player player, int sequence, string word, float x, float y)> PlaceRpc = new("TanukiVoiceStonePlaceV1",
         (m, _) => m.player.Role.GetAbility<Ability>()?.Place(m.sequence, m.word, m.x, m.y));
-    private static readonly RemoteProcess<(Player player, int sequence, string word)> PreviewRpc = new("TanukiVoiceStonePreviewV1",
-        (m, _) => m.player.Role.GetAbility<Ability>()?.Preview(m.sequence, m.word));
-    private static readonly RemoteProcess<(Player player, int sequence, int next, bool neural)> RetryRpc = new("TanukiVoiceStoneRetryV3",
-        (m, _) => m.player.Role.GetAbility<Ability>()?.Retry(m.sequence, m.next, m.neural));
-    private static readonly RemoteProcess<(Player player, int sequence)> CancelRpc = new("TanukiVoiceStoneCancelV1",
-        (m, _) => m.player.Role.GetAbility<Ability>()?.Cancel(m.sequence));
     public sealed class Ability : AbstractPlayerAbility, IPlayerAbility
     {
         private static int nextSequence;
         private readonly VoiceStoneRequest request = new();
         private readonly List<VoiceStoneVisual> stones = new();
         private ModAbilityButton? button;
-        private MetaScreen? confirmation;
+        private IVisualTimer? normalCooldown, retryCooldown;
         private double nextUse;
         private double Now => UnityEngine.Time.unscaledTimeAsDouble;
         private bool Alive => !MyPlayer.IsDead && !MyPlayer.IsDisconnected;
@@ -94,9 +88,11 @@ public sealed class VoiceStone : DefinedRoleTemplate, DefinedRole, IAssignableDo
             if (!AmOwner) return;
             button = NebulaAPI.Modules.AbilityButton(this, player, VirtualKeyInput.FixedAbility, Cooldown,
                 "tanukiVoiceStone.arm", VoiceStoneVisual.Icon,
-                _ => Eligible && !request.Waiting && !request.Confirming && Now >= nextUse && HeroSpeechHost.ReadyFor(player.PlayerId),
+                _ => Eligible && !request.Waiting && Now >= nextUse && HeroSpeechHost.ReadyFor(player.PlayerId),
                 _ => Alive);
             button.EffectTimer = new HeroTransformTimer(() => Math.Max(0, request.RecordUntil - Now), () => (float)Wait, () => Listening);
+            normalCooldown = button.CoolDownTimer;
+            retryCooldown = NebulaAPI.Modules.Timer(this, .5f);
             button.OnClick = _ => ArmRpc.Invoke((MyPlayer, ++nextSequence, HeroSpeechHost.NeuralFor(MyPlayer.PlayerId)));
             button.StartCoolDown();
         }
@@ -105,7 +101,7 @@ public sealed class VoiceStone : DefinedRoleTemplate, DefinedRole, IAssignableDo
             if (!Eligible || Now + .75 < nextUse || !request.Arm(sequence, Now, Wait, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(), neural)) return;
             nextUse = Now + (float)Cooldown;
             Log("Listening request=" + sequence);
-            if (AmOwner) { button?.StartEffect(); button?.StartCoolDown(); }
+            if (AmOwner && button != null) { button.CoolDownTimer = normalCooldown; button.StartEffect(); button.StartCoolDown(); }
         }
         public void RecogniseSpeech(int sequence, string word)
         {
@@ -115,66 +111,14 @@ public sealed class VoiceStone : DefinedRoleTemplate, DefinedRole, IAssignableDo
                 "; validWord=" + validWord + "; maximum=" + (int)Maximum + "; characters=" + VoiceStoneRules.Count(word));
             if (!Eligible || !request.Waiting || sequence != request.Sequence || Now >= request.Expires ||
                 !validWord) return;
-            PreviewRpc.Invoke((MyPlayer, sequence, accepted));
+            var position = MyPlayer.TruePosition;
+            PlaceRpc.Invoke((MyPlayer, sequence, accepted, position.x, position.y));
         }
+        private void Log(string message) => NebulaAPI.Logging.NebulaLogger("TanukiVoiceStone").Message(
+            "Player=" + MyPlayer.PlayerId + "; " + message);
         // RPC callbacks belong to the containing role's generated closure,
         // so their entry points must also be accessible at runtime. NoS's
         // hidden-member compiler otherwise accepts calls the CLR rejects.
-        internal void Preview(int sequence, string word)
-        {
-            if (!Available || !request.Propose(sequence, Now, word, Maximum, 1)) return;
-            Log("Recognized request=" + sequence + "; characters=" + VoiceStoneRules.Count(word));
-            if (!AmOwner) return;
-            button?.InterruptEffect();
-            ShowConfirmation();
-        }
-        private static string T(string key) => NebulaAPI.Language.Translate("tanuki.voiceStone." + key);
-        private void Log(string message) => NebulaAPI.Logging.NebulaLogger("TanukiVoiceStone").Message(
-            "Player=" + MyPlayer.PlayerId + "; " + message);
-        private static Virial.Text.TextAttribute Attr(float height = .45f) =>
-            new(NebulaAPI.GUI.GetAttribute(Virial.Text.AttributeAsset.OptionsTitleHalf))
-            { Font = NebulaAPI.GUI.GetFont(Virial.Text.FontAsset.Gothic), Size = new(5f, height), Wrapping = true,
-              Alignment = Virial.Text.TextAlignment.Center, FontSize = new(1.6f, 1.3f, 1.6f) };
-        private void ShowConfirmation()
-        {
-            if (confirmation != null || !request.Confirming) return;
-            var parent = Nebula.Utilities.UnityHelper.FindCamera(UnityEngine.LayerMask.NameToLayer("UI"))?.transform;
-            if (parent == null) return;
-            confirmation = MetaScreen.GenerateWindow(new UnityEngine.Vector2(5.8f, 4.2f), parent,
-                UnityEngine.Vector3.zero, true, false, withCloseButton: false);
-            Log("Confirmation opened request=" + request.Sequence);
-            confirmation.SetWidget(NebulaAPI.GUI.VerticalHolder(Virial.Media.GUIAlignment.Center,
-                NebulaAPI.GUI.RawText(Virial.Media.GUIAlignment.Center, Attr(), T("title")),
-                NebulaAPI.GUI.RawText(Virial.Media.GUIAlignment.Center, Attr(.8f), request.Candidate),
-                NebulaAPI.GUI.RawText(Virial.Media.GUIAlignment.Center, Attr(.65f), T("hint")),
-                NebulaAPI.GUI.RawButton(Virial.Media.GUIAlignment.Center, Attr(), T("place"), _ => Confirm()),
-                NebulaAPI.GUI.RawButton(Virial.Media.GUIAlignment.Center, Attr(), T("retry"),
-                    _ => RetryRpc.Invoke((MyPlayer, request.Sequence, ++nextSequence, HeroSpeechHost.NeuralFor(MyPlayer.PlayerId)))),
-                NebulaAPI.GUI.RawButton(Virial.Media.GUIAlignment.Center, Attr(), T("cancel"),
-                    _ => CancelRpc.Invoke((MyPlayer, request.Sequence)))), new Virial.Compat.Vector2(.5f, .5f), out _);
-        }
-        private void Confirm()
-        {
-            if (!AmOwner || !Available || !request.Confirming || Now >= request.Expires) return;
-            var position = MyPlayer.TruePosition;
-            PlaceRpc.Invoke((MyPlayer, request.Sequence, request.Candidate, position.x, position.y));
-        }
-        internal void Retry(int sequence, int next, bool neural)
-        {
-            if (!Available || !request.Retry(sequence, next, Now, Wait, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(), neural)) return;
-            Log("Listening retry=" + next);
-            CloseConfirmation();
-            if (AmOwner) button?.StartEffect();
-        }
-        internal void Cancel(int sequence)
-        {
-            if (sequence == request.Sequence) { Log("Cancelled request=" + sequence); StopListening(); }
-        }
-        private void CloseConfirmation()
-        {
-            if (confirmation != null) confirmation.CloseScreen();
-            confirmation = null;
-        }
         internal void Place(int sequence, string word, float x, float y)
         {
             if (!Available || !float.IsFinite(x) || !float.IsFinite(y)) return;
@@ -195,18 +139,23 @@ public sealed class VoiceStone : DefinedRoleTemplate, DefinedRole, IAssignableDo
         {
             // Stop accepting local recognition at the exact deadline. Keep the
             // RPC pending briefly so an in-time result can reach slower peers.
-            if ((request.Waiting || request.Confirming) && (!Available || Now >= request.Expires + 1))
+            if (request.Waiting && (!Available || Now >= request.Expires + 1))
             {
-                Log(request.Waiting ? "Listening ended without a result" : "Confirmation ended");
+                bool failed = request.Waiting && Available;
+                Log("Listening ended without a result");
                 StopListening();
+                if (failed)
+                {
+                    nextUse = Now + .5;
+                    if (AmOwner && button != null) { button.CoolDownTimer = retryCooldown; button.StartCoolDown(); }
+                }
             }
-            if (AmOwner && request.Confirming && Available) ShowConfirmation();
             foreach (var stone in stones) stone.Update();
             stones.RemoveAll(stone => stone.Expired);
             if (MyPlayer.IsDisconnected) Clear();
             if (AmOwner) button?.SetLabel(Listening ? (request.LocalNeural ? "tanukiVoiceStone.localRecording" : "tanukiVoiceStone.listening") : request.Waiting ? "tanukiVoiceStone.processing" : "tanukiVoiceStone.arm");
         }
-        private void StopListening() { request.Cancel(); CloseConfirmation(); if (AmOwner) button?.InterruptEffect(); }
+        private void StopListening() { request.Cancel(); if (AmOwner) button?.InterruptEffect(); }
         private void Clear() { StopListening(); foreach (var stone in stones) stone.Dispose(); stones.Clear(); }
         private void OnMeeting(MeetingStartEvent ev) => Clear();
         private void OnGameEnd(GameEndEvent ev) => Clear();
